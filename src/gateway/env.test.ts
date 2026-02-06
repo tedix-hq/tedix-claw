@@ -95,8 +95,8 @@ describe('buildEnvVars', () => {
   });
 
   // Gateway token mapping
-  it('maps GATEWAY_TOKEN to OPENCLAW_GATEWAY_TOKEN for container', () => {
-    const env = createMockEnv({ GATEWAY_TOKEN: 'my-token' });
+  it('passes OPENCLAW_GATEWAY_TOKEN to container', () => {
+    const env = createMockEnv({ OPENCLAW_GATEWAY_TOKEN: 'my-token' });
     const result = buildEnvVars(env);
     expect(result.OPENCLAW_GATEWAY_TOKEN).toBe('my-token');
   });
@@ -132,7 +132,7 @@ describe('buildEnvVars', () => {
   it('combines all env vars correctly', () => {
     const env = createMockEnv({
       ANTHROPIC_API_KEY: 'sk-key',
-      GATEWAY_TOKEN: 'token',
+      OPENCLAW_GATEWAY_TOKEN: 'token',
       TELEGRAM_BOT_TOKEN: 'tg',
     });
     const result = buildEnvVars(env);

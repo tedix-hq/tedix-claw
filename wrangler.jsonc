@@ -85,7 +85,7 @@
   //   - AI_GATEWAY_BASE_URL: Gateway endpoint URL
   //
   // Authentication:
-  // - GATEWAY_TOKEN: Token to protect gateway access
+  // - OPENCLAW_GATEWAY_TOKEN: Token to protect gateway access
   // - CF_ACCESS_TEAM_DOMAIN: Cloudflare Access team domain
   // - CF_ACCESS_AUD: Cloudflare Access application audience
   //

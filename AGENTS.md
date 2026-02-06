@@ -200,7 +200,7 @@ These are the env vars passed TO the container (internal names):
 | `CLOUDFLARE_AI_GATEWAY_API_KEY` | (env var) | Native AI Gateway key |
 | `CF_AI_GATEWAY_ACCOUNT_ID` | (env var) | Account ID for AI Gateway |
 | `CF_AI_GATEWAY_GATEWAY_ID` | (env var) | Gateway ID for AI Gateway |
-| `OPENCLAW_GATEWAY_TOKEN` | `--token` flag | Mapped from `GATEWAY_TOKEN` |
+| `OPENCLAW_GATEWAY_TOKEN` | `--token` flag | Gateway authentication token |
 | `OPENCLAW_DEV_MODE` | `controlUi.allowInsecureAuth` | Mapped from `DEV_MODE` |
 | `TELEGRAM_BOT_TOKEN` | `channels.telegram.botToken` | |
 | `DISCORD_BOT_TOKEN` | `channels.discord.token` | |

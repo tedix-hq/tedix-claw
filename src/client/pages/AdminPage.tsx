@@ -6,11 +6,15 @@ import {
   restartGateway,
   getStorageStatus,
   triggerSync,
+  getAuthProviders,
+  saveSetupToken,
+  removeAuthProvider,
   AuthError,
   type PendingDevice,
   type PairedDevice,
   type DeviceListResponse,
   type StorageStatusResponse,
+  type AuthProvider,
 } from '../api';
 import './AdminPage.css';
 
@@ -54,6 +58,11 @@ export default function AdminPage() {
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
   const [restartInProgress, setRestartInProgress] = useState(false);
   const [syncInProgress, setSyncInProgress] = useState(false);
+  const [authProviders, setAuthProviders] = useState<AuthProvider[]>([]);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [setupToken, setSetupToken] = useState('');
+  const [setupTokenSaving, setSetupTokenSaving] = useState(false);
+  const [deletingProvider, setDeletingProvider] = useState<string | null>(null);
 
   const fetchDevices = useCallback(async () => {
     try {
@@ -88,10 +97,23 @@ export default function AdminPage() {
     }
   }, []);
 
+  const fetchAuthProviders = useCallback(async () => {
+    try {
+      setAuthLoading(true);
+      const data = await getAuthProviders();
+      setAuthProviders(data.providers || []);
+    } catch (err) {
+      console.error('Failed to fetch auth providers:', err);
+    } finally {
+      setAuthLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchDevices();
     fetchStorageStatus();
-  }, [fetchDevices, fetchStorageStatus]);
+    fetchAuthProviders();
+  }, [fetchDevices, fetchStorageStatus, fetchAuthProviders]);
 
   const handleApprove = async (requestId: string) => {
     setActionInProgress(requestId);
@@ -151,6 +173,43 @@ export default function AdminPage() {
       setError(err instanceof Error ? err.message : 'Failed to restart gateway');
     } finally {
       setRestartInProgress(false);
+    }
+  };
+
+  const handleSaveSetupToken = async () => {
+    if (!setupToken.trim()) return;
+
+    setSetupTokenSaving(true);
+    try {
+      const result = await saveSetupToken('anthropic', setupToken.trim());
+      if (result.success) {
+        setSetupToken('');
+        setError(null);
+        await fetchAuthProviders();
+      } else {
+        setError(result.error || 'Failed to save setup token');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save setup token');
+    } finally {
+      setSetupTokenSaving(false);
+    }
+  };
+
+  const handleDeleteProvider = async (profileId: string) => {
+    setDeletingProvider(profileId);
+    try {
+      const result = await removeAuthProvider(profileId);
+      if (result.success) {
+        setError(null);
+        await fetchAuthProviders();
+      } else {
+        setError(result.error || 'Failed to remove provider');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove provider');
+    } finally {
+      setDeletingProvider(null);
     }
   };
 
@@ -245,6 +304,82 @@ export default function AdminPage() {
           Restart the gateway to apply configuration changes or recover from errors. All connected
           clients will be temporarily disconnected.
         </p>
+      </section>
+
+      <section className="devices-section providers-section">
+        <div className="section-header">
+          <h2>Model Providers</h2>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={fetchAuthProviders}
+            disabled={authLoading}
+          >
+            Refresh
+          </button>
+        </div>
+
+        {authLoading ? (
+          <div className="loading" style={{ minHeight: 100 }}>
+            <div className="spinner" style={{ width: 24, height: 24 }} />
+          </div>
+        ) : (
+          <>
+            {authProviders.length > 0 ? (
+              <div className="providers-list">
+                {authProviders.map((provider) => (
+                  <div key={provider.id} className="provider-card">
+                    <div className="provider-info">
+                      <span className="provider-name">
+                        {provider.provider}
+                        <span className="provider-badge">{provider.type}</span>
+                      </span>
+                      {provider.tokenPreview && (
+                        <span className="provider-preview">{provider.tokenPreview}</span>
+                      )}
+                    </div>
+                    <button
+                      className="btn btn-danger btn-sm"
+                      onClick={() => handleDeleteProvider(provider.id)}
+                      disabled={deletingProvider === provider.id}
+                    >
+                      {deletingProvider === provider.id && <ButtonSpinner />}
+                      {deletingProvider === provider.id ? 'Removing...' : 'Remove'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state" style={{ padding: '1.5rem 1rem' }}>
+                <p>No providers configured</p>
+              </div>
+            )}
+
+            <div className="token-form">
+              <input
+                type="text"
+                className="token-input"
+                placeholder="Paste setup token from 'claude setup-token'"
+                value={setupToken}
+                onChange={(e) => setSetupToken(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && setupToken.trim()) handleSaveSetupToken();
+                }}
+                disabled={setupTokenSaving}
+              />
+              <button
+                className="btn btn-primary"
+                onClick={handleSaveSetupToken}
+                disabled={setupTokenSaving || !setupToken.trim()}
+              >
+                {setupTokenSaving && <ButtonSpinner />}
+                {setupTokenSaving ? 'Saving...' : 'Save Token'}
+              </button>
+            </div>
+            <p className="token-form-hint">
+              Generate a setup token by running <code>claude setup-token</code> in your terminal.
+            </p>
+          </>
+        )}
       </section>
 
       {loading ? (

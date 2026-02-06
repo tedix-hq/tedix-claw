@@ -14,7 +14,7 @@
  * - ANTHROPIC_API_KEY: Your Anthropic API key
  *
  * Optional secrets:
- * - GATEWAY_TOKEN: Token to protect gateway access
+ * - OPENCLAW_GATEWAY_TOKEN: Token to protect gateway access
  * - TELEGRAM_BOT_TOKEN: Telegram bot token
  * - DISCORD_BOT_TOKEN: Discord bot token
  * - SLACK_BOT_TOKEN + SLACK_APP_TOKEN: Slack tokens
@@ -57,8 +57,8 @@ function validateRequiredEnv(env: OpenClawEnv): string[] {
   const missing: string[] = [];
   const isTestMode = env.DEV_MODE === 'true' || env.E2E_TEST_MODE === 'true';
 
-  if (!env.GATEWAY_TOKEN) {
-    missing.push('GATEWAY_TOKEN');
+  if (!env.OPENCLAW_GATEWAY_TOKEN) {
+    missing.push('OPENCLAW_GATEWAY_TOKEN');
   }
 
   // CF Access vars not required in dev/test mode since auth is skipped
@@ -293,9 +293,9 @@ app.all('*', async (c) => {
     // CF Access redirects strip query params, so authenticated users lose ?token=.
     // Since the user already passed CF Access auth, we inject the token server-side.
     let wsRequest = request;
-    if (c.env.GATEWAY_TOKEN && !url.searchParams.has('token')) {
+    if (c.env.OPENCLAW_GATEWAY_TOKEN && !url.searchParams.has('token')) {
       const tokenUrl = new URL(url.toString());
-      tokenUrl.searchParams.set('token', c.env.GATEWAY_TOKEN);
+      tokenUrl.searchParams.set('token', c.env.OPENCLAW_GATEWAY_TOKEN);
       wsRequest = new Request(tokenUrl.toString(), request);
     }
 

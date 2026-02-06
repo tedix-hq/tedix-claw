@@ -36,8 +36,8 @@ export function buildEnvVars(env: OpenClawEnv): Record<string, string> {
     envVars.ANTHROPIC_BASE_URL = env.ANTHROPIC_BASE_URL;
   }
 
-  // Map GATEWAY_TOKEN to OPENCLAW_GATEWAY_TOKEN (container expects this name)
-  if (env.GATEWAY_TOKEN) envVars.OPENCLAW_GATEWAY_TOKEN = env.GATEWAY_TOKEN;
+  // Pass gateway token to container
+  if (env.OPENCLAW_GATEWAY_TOKEN) envVars.OPENCLAW_GATEWAY_TOKEN = env.OPENCLAW_GATEWAY_TOKEN;
   if (env.DEV_MODE) envVars.OPENCLAW_DEV_MODE = env.DEV_MODE;
   if (env.TELEGRAM_BOT_TOKEN) envVars.TELEGRAM_BOT_TOKEN = env.TELEGRAM_BOT_TOKEN;
   if (env.TELEGRAM_DM_POLICY) envVars.TELEGRAM_DM_POLICY = env.TELEGRAM_DM_POLICY;

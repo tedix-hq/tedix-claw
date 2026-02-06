@@ -137,3 +137,44 @@ export async function triggerSync(): Promise<SyncResponse> {
     method: 'POST',
   });
 }
+
+// Auth provider management
+
+export interface AuthProvider {
+  id: string;
+  provider: string;
+  type: string;
+  tokenPreview?: string;
+  configured: boolean;
+}
+
+export interface AuthProvidersResponse {
+  providers: AuthProvider[];
+  error?: string;
+}
+
+export interface SetupTokenResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+}
+
+export async function getAuthProviders(): Promise<AuthProvidersResponse> {
+  return apiRequest<AuthProvidersResponse>('/auth/providers');
+}
+
+export async function saveSetupToken(
+  provider: string,
+  token: string,
+): Promise<SetupTokenResponse> {
+  return apiRequest<SetupTokenResponse>('/auth/setup-token', {
+    method: 'POST',
+    body: JSON.stringify({ provider, token }),
+  });
+}
+
+export async function removeAuthProvider(profileId: string): Promise<SetupTokenResponse> {
+  return apiRequest<SetupTokenResponse>(`/auth/providers/${profileId}`, {
+    method: 'DELETE',
+  });
+}
