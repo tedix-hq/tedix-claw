@@ -88,13 +88,13 @@ fi
 
 # Step 3: Delete service token via API
 if [ -n "$TEST_RUN_ID" ] && [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ]; then
-    echo "Deleting service token: moltbot-e2e-$TEST_RUN_ID" >&2
+    echo "Deleting service token: openclaw-e2e-$TEST_RUN_ID" >&2
     # Find and delete the service token
     TOKEN_ID=$(curl -s -X GET \
         "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/access/service_tokens" \
         -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
         -H "Content-Type: application/json" | \
-        jq -r ".result[] | select(.name == \"moltbot-e2e-$TEST_RUN_ID\") | .id" 2>/dev/null || echo "")
+        jq -r ".result[] | select(.name == \"openclaw-e2e-$TEST_RUN_ID\") | .id" 2>/dev/null || echo "")
     
     if [ -n "$TOKEN_ID" ]; then
         curl -s -X DELETE \

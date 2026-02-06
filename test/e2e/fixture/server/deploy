@@ -17,7 +17,7 @@ fi
 : "${CF_ACCOUNT_ID:?CF_ACCOUNT_ID is required}"
 : "${R2_ACCESS_KEY_ID:?R2_ACCESS_KEY_ID is required}"
 : "${R2_SECRET_ACCESS_KEY:?R2_SECRET_ACCESS_KEY is required}"
-: "${MOLTBOT_GATEWAY_TOKEN:?MOLTBOT_GATEWAY_TOKEN is required}"
+: "${GATEWAY_TOKEN:?GATEWAY_TOKEN is required}"
 
 # Read terraform outputs
 TERRAFORM_OUTPUT="$1"
@@ -47,7 +47,7 @@ E2E_CONFIG="$PROJECT_DIR/.wrangler-e2e-$WORKER_NAME.jsonc"
 echo "Generating e2e config: $E2E_CONFIG" >&2
 
 # Copy config and replace the name field (sed handles JSONC comments fine)
-sed 's/"name": "moltbot-sandbox"/"name": "'"$WORKER_NAME"'"/' "$PROJECT_DIR/wrangler.jsonc" > "$E2E_CONFIG"
+sed 's/"name": "tedix-claw"/"name": "'"$WORKER_NAME"'"/' "$PROJECT_DIR/wrangler.jsonc" > "$E2E_CONFIG"
 
 # Deploy using the e2e-specific config
 echo "Deploying worker: $WORKER_NAME to account $CLOUDFLARE_ACCOUNT_ID" >&2
@@ -62,7 +62,7 @@ rm -f "$E2E_CONFIG"
 
 # Set secrets for the deployed worker
 echo "Setting worker secrets..." >&2
-echo "$MOLTBOT_GATEWAY_TOKEN" | npx wrangler secret put MOLTBOT_GATEWAY_TOKEN --name "$WORKER_NAME" >&2
+echo "$GATEWAY_TOKEN" | npx wrangler secret put GATEWAY_TOKEN --name "$WORKER_NAME" >&2
 echo "$CF_ACCESS_TEAM_DOMAIN" | npx wrangler secret put CF_ACCESS_TEAM_DOMAIN --name "$WORKER_NAME" >&2
 echo "$R2_ACCESS_KEY_ID" | npx wrangler secret put R2_ACCESS_KEY_ID --name "$WORKER_NAME" >&2
 echo "$R2_SECRET_ACCESS_KEY" | npx wrangler secret put R2_SECRET_ACCESS_KEY --name "$WORKER_NAME" >&2

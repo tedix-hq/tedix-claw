@@ -1,5 +1,5 @@
 #!/bin/bash
-# Start the moltworker for E2E testing (cloud deployment)
+# Start the tedix-claw for E2E testing (cloud deployment)
 #
 # Required environment variables:
 # - CLOUDFLARE_API_TOKEN: API token with Workers, Access, R2 permissions

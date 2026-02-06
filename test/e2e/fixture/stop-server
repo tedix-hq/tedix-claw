@@ -1,5 +1,5 @@
 #!/bin/bash
-# Stop the moltworker and clean up ALL cloud resources
+# Stop the tedix-claw and clean up ALL cloud resources
 #
 # This will:
 # 1. Delete the deployed worker

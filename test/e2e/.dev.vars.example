@@ -13,7 +13,7 @@
 # 3. Click "Create Custom Token" (at the bottom)
 # 4. Configure the token:
 #
-#    Token name: moltworker-e2e-tests (or whatever you prefer)
+#    Token name: tedix-claw-e2e-tests (or whatever you prefer)
 #
 #    Permissions (add all of these):
 #    ┌─────────────────────────────────────────────────────────────────────────┐
@@ -94,10 +94,10 @@ CF_ACCESS_TEAM_DOMAIN=
 # 2. Click "Manage R2 API Tokens" (top right)
 # 3. Click "Create API Token"
 # 4. Configure:
-#    - Token name: moltworker-e2e (or whatever you prefer)
+#    - Token name: tedix-claw-e2e (or whatever you prefer)
 #    - Permissions: Object Read & Write
 #    - Specify bucket(s): You can leave as "Apply to all buckets" or
-#      limit to buckets starting with "moltbot-" for safety
+#      limit to buckets starting with "openclaw-" for safety
 #    - TTL: (optional)
 # 5. Click "Create API Token"
 # 6. Copy both the "Access Key ID" and "Secret Access Key"

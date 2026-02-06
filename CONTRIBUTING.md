@@ -26,7 +26,7 @@ We have a few rules regarding AI usage:
 
 - **No AI-generated media is allowed (art, images, videos, audio, etc.).** Text and code are the only acceptable AI-generated content, per the other rules in this policy.
 
-These rules apply only to outside contributions to Ghostty. Maintainers are exempt from these rules and may use AI tools at their discretion; they've proven themselves trustworthy to apply good judgment.
+These rules apply only to outside contributions. Maintainers are exempt from these rules and may use AI tools at their discretion; they've proven themselves trustworthy to apply good judgment.
 
 ## There are Humans Here
 

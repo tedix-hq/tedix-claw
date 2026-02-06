@@ -4,13 +4,13 @@ Guidelines for AI agents working on this codebase.
 
 ## Project Overview
 
-This is a Cloudflare Worker that runs [OpenClaw](https://github.com/openclaw/openclaw) (formerly OpenClaw/Clawdbot) in a Cloudflare Sandbox container. It provides:
+This is a Cloudflare Worker that runs [OpenClaw](https://github.com/openclaw/openclaw) in a Cloudflare Sandbox container. It provides:
 - Proxying to the OpenClaw gateway (web UI + WebSocket)
 - Admin UI at `/_admin/` for device management
 - API endpoints at `/api/*` for device pairing
 - Debug endpoints at `/debug/*` for troubleshooting
 
-**Note:** The CLI tool and npm package are now named `openclaw`. Config files use `.openclaw/openclaw.json`. Legacy `.clawdbot` paths are supported for backward compatibility during transition.
+**Note:** The CLI tool and npm package are named `openclaw`. Config files use `.openclaw/openclaw.json`.
 
 ## Project Structure
 
@@ -175,7 +175,7 @@ The Dockerfile includes a cache bust comment. When changing `start-openclaw.sh`,
 
 OpenClaw configuration is built at container startup:
 
-1. R2 backup is restored if available (with migration from legacy `.clawdbot` paths)
+1. R2 backup is restored if available
 2. If no config exists, `openclaw onboard --non-interactive` creates one based on env vars
 3. `start-openclaw.sh` patches the config for channels, gateway auth, and trusted proxies
 4. Gateway starts with `openclaw gateway --allow-unconfigured --bind lan`
@@ -258,4 +258,4 @@ R2 is mounted via s3fs at `/data/openclaw`. Important gotchas:
 
 - **Process status**: The sandbox API's `proc.status` may not update immediately after a process completes. Instead of checking `proc.status === 'completed'`, verify success by checking for expected output (e.g., timestamp file exists after sync).
 
-- **R2 prefix migration**: Backups are now stored under `openclaw/` prefix in R2 (was `clawdbot/`). The startup script handles restoring from both old and new prefixes with automatic migration.
+- **R2 prefix**: Backups are stored under `openclaw/` prefix in R2.

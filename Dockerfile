@@ -20,13 +20,12 @@ RUN ARCH="$(dpkg --print-architecture)" \
 # Install pnpm globally
 RUN npm install -g pnpm
 
-# Install OpenClaw (formerly clawdbot/openclaw)
+# Install OpenClaw
 # Pin to specific version for reproducible builds
 RUN npm install -g openclaw@2026.2.3 \
     && openclaw --version
 
 # Create OpenClaw directories
-# Legacy .clawdbot paths are kept for R2 backup migration
 RUN mkdir -p /root/.openclaw \
     && mkdir -p /root/clawd \
     && mkdir -p /root/clawd/skills

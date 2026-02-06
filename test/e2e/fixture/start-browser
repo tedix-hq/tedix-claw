@@ -3,7 +3,7 @@
 
 set -e
 
-SESSION_NAME="moltworker-e2e"
+SESSION_NAME="tedix-claw-e2e"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Support running directly (not via cctr)

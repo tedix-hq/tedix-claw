@@ -58,8 +58,8 @@ fi
 export E2E_TEST_RUN_ID="${E2E_TEST_RUN_ID:-$(date +%s)-$(openssl rand -hex 4)}"
 
 # Generate a gateway token for this test run
-GATEWAY_TOKEN="${MOLTBOT_GATEWAY_TOKEN:-e2e-cloud-$(openssl rand -hex 16)}"
-export MOLTBOT_GATEWAY_TOKEN="$GATEWAY_TOKEN"
+GATEWAY_TOKEN="${GATEWAY_TOKEN:-e2e-cloud-$(openssl rand -hex 16)}"
+export GATEWAY_TOKEN="$GATEWAY_TOKEN"
 
 log "Starting cloud e2e infrastructure..."
 log "Test run ID: $E2E_TEST_RUN_ID"

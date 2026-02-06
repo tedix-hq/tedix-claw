@@ -1,12 +1,12 @@
 # OpenClaw on Cloudflare Workers
 
-Run [OpenClaw](https://github.com/openclaw/openclaw) (formerly OpenClaw, formerly Clawdbot) personal AI assistant in a [Cloudflare Sandbox](https://developers.cloudflare.com/sandbox/).
+Run [OpenClaw](https://github.com/openclaw/openclaw) personal AI assistant in a [Cloudflare Sandbox](https://developers.cloudflare.com/sandbox/).
 
 ![tedix-claw architecture](./assets/logo.png)
 
 > **Experimental:** This is a proof of concept demonstrating that OpenClaw can run in Cloudflare Sandbox. It is not officially supported and may break without notice. Use at your own risk.
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/tedix-claw)
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/tedix-hq/tedix-claw)
 
 ## Requirements
 
@@ -40,7 +40,7 @@ Notes:
 
 ## What is OpenClaw?
 
-[OpenClaw](https://github.com/openclaw/openclaw) (formerly OpenClaw, formerly Clawdbot) is a personal AI assistant with a gateway architecture that connects to multiple chat platforms. Key features:
+[OpenClaw](https://github.com/openclaw/openclaw) is a personal AI assistant with a gateway architecture that connects to multiple chat platforms. Key features:
 
 - **Control UI** - Web-based chat interface at the gateway
 - **Multi-channel support** - Telegram, Discord, Slack
@@ -436,7 +436,7 @@ OpenClaw in Cloudflare Sandbox uses multiple authentication layers:
 
 ### Windows: Gateway fails to start with exit code 126 (permission denied)
 
-On Windows, Git may check out shell scripts with CRLF line endings instead of LF. This causes `start-openclaw.sh` to fail with exit code 126 inside the Linux container. Ensure your repository uses LF line endings — configure Git with `git config --global core.autocrlf input` or add a `.gitattributes` file with `* text=auto eol=lf`. See [#64](https://github.com/cloudflare/tedix-claw/issues/64) for details.
+On Windows, Git may check out shell scripts with CRLF line endings instead of LF. This causes `start-openclaw.sh` to fail with exit code 126 inside the Linux container. Ensure your repository uses LF line endings — configure Git with `git config --global core.autocrlf input` or add a `.gitattributes` file with `* text=auto eol=lf`. See [cloudflare/moltworker#64](https://github.com/cloudflare/moltworker/issues/64) for details.
 
 ## Links
 
