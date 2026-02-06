@@ -1,6 +1,6 @@
 import type { Sandbox, Process } from '@cloudflare/sandbox';
-import type { MoltbotEnv } from '../types';
-import { MOLTBOT_PORT, STARTUP_TIMEOUT_MS } from '../config';
+import type { OpenClawEnv } from '../types';
+import { GATEWAY_PORT, STARTUP_TIMEOUT_MS } from '../config';
 import { buildEnvVars } from './env';
 import { mountR2Storage } from './r2';
 
@@ -10,7 +10,7 @@ import { mountR2Storage } from './r2';
  * @param sandbox - The sandbox instance
  * @returns The process if found and running/starting, null otherwise
  */
-export async function findExistingMoltbotProcess(sandbox: Sandbox): Promise<Process | null> {
+export async function findExistingGateway(sandbox: Sandbox): Promise<Process | null> {
   try {
     const processes = await sandbox.listProcesses();
     for (const proc of processes) {
@@ -18,16 +18,11 @@ export async function findExistingMoltbotProcess(sandbox: Sandbox): Promise<Proc
       // Don't match CLI commands like "openclaw devices list"
       const isGatewayProcess =
         proc.command.includes('start-openclaw.sh') ||
-        proc.command.includes('openclaw gateway') ||
-        // Legacy: match old startup script during transition
-        proc.command.includes('start-moltbot.sh') ||
-        proc.command.includes('clawdbot gateway');
+        proc.command.includes('openclaw gateway');
       const isCliCommand =
         proc.command.includes('openclaw devices') ||
         proc.command.includes('openclaw --version') ||
-        proc.command.includes('openclaw onboard') ||
-        proc.command.includes('clawdbot devices') ||
-        proc.command.includes('clawdbot --version');
+        proc.command.includes('openclaw onboard');
 
       if (isGatewayProcess && !isCliCommand) {
         if (proc.status === 'starting' || proc.status === 'running') {
@@ -53,13 +48,13 @@ export async function findExistingMoltbotProcess(sandbox: Sandbox): Promise<Proc
  * @param env - Worker environment bindings
  * @returns The running gateway process
  */
-export async function ensureMoltbotGateway(sandbox: Sandbox, env: MoltbotEnv): Promise<Process> {
+export async function ensureGateway(sandbox: Sandbox, env: OpenClawEnv): Promise<Process> {
   // Mount R2 storage for persistent data (non-blocking if not configured)
   // R2 is used as a backup - the startup script will restore from it on boot
   await mountR2Storage(sandbox, env);
 
   // Check if gateway is already running or starting
-  const existingProcess = await findExistingMoltbotProcess(sandbox);
+  const existingProcess = await findExistingGateway(sandbox);
   if (existingProcess) {
     console.log(
       'Found existing gateway process:',
@@ -72,8 +67,8 @@ export async function ensureMoltbotGateway(sandbox: Sandbox, env: MoltbotEnv): P
     // (e.g., just started by another concurrent request). Using a shorter timeout
     // causes race conditions where we kill processes that are still initializing.
     try {
-      console.log('Waiting for gateway on port', MOLTBOT_PORT, 'timeout:', STARTUP_TIMEOUT_MS);
-      await existingProcess.waitForPort(MOLTBOT_PORT, { mode: 'tcp', timeout: STARTUP_TIMEOUT_MS });
+      console.log('Waiting for gateway on port', GATEWAY_PORT, 'timeout:', STARTUP_TIMEOUT_MS);
+      await existingProcess.waitForPort(GATEWAY_PORT, { mode: 'tcp', timeout: STARTUP_TIMEOUT_MS });
       console.log('Gateway is reachable');
       return existingProcess;
       // eslint-disable-next-line no-unused-vars
@@ -109,8 +104,8 @@ export async function ensureMoltbotGateway(sandbox: Sandbox, env: MoltbotEnv): P
 
   // Wait for the gateway to be ready
   try {
-    console.log('[Gateway] Waiting for OpenClaw gateway to be ready on port', MOLTBOT_PORT);
-    await process.waitForPort(MOLTBOT_PORT, { mode: 'tcp', timeout: STARTUP_TIMEOUT_MS });
+    console.log('[Gateway] Waiting for OpenClaw gateway to be ready on port', GATEWAY_PORT);
+    await process.waitForPort(GATEWAY_PORT, { mode: 'tcp', timeout: STARTUP_TIMEOUT_MS });
     console.log('[Gateway] OpenClaw gateway is ready!');
 
     const logs = await process.getLogs();

@@ -1,11 +1,11 @@
 output "worker_url" {
   description = "URL of the deployed e2e worker"
-  value       = "https://moltbot-sandbox-e2e-${var.test_run_id}.${var.workers_subdomain}.workers.dev"
+  value       = "https://tedix-claw-e2e-${var.test_run_id}.${var.workers_subdomain}.workers.dev"
 }
 
 output "worker_name" {
   description = "Name of the deployed worker"
-  value       = "moltbot-sandbox-e2e-${var.test_run_id}"
+  value       = "tedix-claw-e2e-${var.test_run_id}"
 }
 
 output "service_token_id" {

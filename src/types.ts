@@ -1,12 +1,12 @@
 import type { Sandbox } from '@cloudflare/sandbox';
 
 /**
- * Environment bindings for the Moltbot Worker
+ * Environment bindings for the OpenClaw Worker
  */
-export interface MoltbotEnv {
+export interface OpenClawEnv {
   Sandbox: DurableObjectNamespace<Sandbox>;
   ASSETS: Fetcher; // Assets binding for admin UI static files
-  MOLTBOT_BUCKET: R2Bucket; // R2 bucket for persistent storage
+  OPENCLAW_BUCKET: R2Bucket; // R2 bucket for persistent storage
   // Cloudflare AI Gateway configuration (preferred)
   CF_AI_GATEWAY_ACCOUNT_ID?: string; // Cloudflare account ID for AI Gateway
   CF_AI_GATEWAY_GATEWAY_ID?: string; // AI Gateway ID
@@ -18,7 +18,7 @@ export interface MoltbotEnv {
   ANTHROPIC_API_KEY?: string;
   ANTHROPIC_BASE_URL?: string;
   OPENAI_API_KEY?: string;
-  MOLTBOT_GATEWAY_TOKEN?: string; // Gateway token (mapped to OPENCLAW_GATEWAY_TOKEN for container)
+  GATEWAY_TOKEN?: string; // Gateway token (mapped to OPENCLAW_GATEWAY_TOKEN for container)
   DEV_MODE?: string; // Set to 'true' for local dev (skips CF Access auth + openclaw device pairing)
   E2E_TEST_MODE?: string; // Set to 'true' for E2E tests (skips CF Access auth but keeps device pairing)
   DEBUG_ROUTES?: string; // Set to 'true' to enable /debug/* routes
@@ -35,7 +35,7 @@ export interface MoltbotEnv {
   // R2 credentials for bucket mounting (set via wrangler secret)
   R2_ACCESS_KEY_ID?: string;
   R2_SECRET_ACCESS_KEY?: string;
-  R2_BUCKET_NAME?: string; // Override bucket name (default: 'moltbot-data')
+  R2_BUCKET_NAME?: string; // Override bucket name (default: 'openclaw-data')
   CF_ACCOUNT_ID?: string; // Cloudflare account ID for R2 endpoint
   // Browser Rendering binding for CDP shim
   BROWSER?: Fetcher;
@@ -55,7 +55,7 @@ export interface AccessUser {
  * Hono app environment type
  */
 export type AppEnv = {
-  Bindings: MoltbotEnv;
+  Bindings: OpenClawEnv;
   Variables: {
     sandbox: Sandbox;
     accessUser?: AccessUser;

@@ -2,8 +2,8 @@ import { Hono } from 'hono';
 import type { AppEnv } from '../types';
 import { createAccessMiddleware } from '../auth';
 import {
-  ensureMoltbotGateway,
-  findExistingMoltbotProcess,
+  ensureGateway,
+  findExistingGateway,
   mountR2Storage,
   syncToR2,
   waitForProcess,
@@ -34,8 +34,8 @@ adminApi.get('/devices', async (c) => {
   const sandbox = c.get('sandbox');
 
   try {
-    // Ensure moltbot is running first
-    await ensureMoltbotGateway(sandbox, c.env);
+    // Ensure openclaw is running first
+    await ensureGateway(sandbox, c.env);
 
     // Run OpenClaw CLI to list devices
     // Must specify --url to connect to the gateway running in the same container
@@ -89,8 +89,8 @@ adminApi.post('/devices/:requestId/approve', async (c) => {
   }
 
   try {
-    // Ensure moltbot is running first
-    await ensureMoltbotGateway(sandbox, c.env);
+    // Ensure openclaw is running first
+    await ensureGateway(sandbox, c.env);
 
     // Run OpenClaw CLI to approve the device
     const proc = await sandbox.startProcess(
@@ -123,8 +123,8 @@ adminApi.post('/devices/approve-all', async (c) => {
   const sandbox = c.get('sandbox');
 
   try {
-    // Ensure moltbot is running first
-    await ensureMoltbotGateway(sandbox, c.env);
+    // Ensure openclaw is running first
+    await ensureGateway(sandbox, c.env);
 
     // First, get the list of pending devices
     const listProc = await sandbox.startProcess(
@@ -269,7 +269,7 @@ adminApi.post('/gateway/restart', async (c) => {
 
   try {
     // Find and kill the existing gateway process
-    const existingProcess = await findExistingMoltbotProcess(sandbox);
+    const existingProcess = await findExistingGateway(sandbox);
 
     if (existingProcess) {
       console.log('Killing existing gateway process:', existingProcess.id);
@@ -283,7 +283,7 @@ adminApi.post('/gateway/restart', async (c) => {
     }
 
     // Start a new gateway in the background
-    const bootPromise = ensureMoltbotGateway(sandbox, c.env).catch((err) => {
+    const bootPromise = ensureGateway(sandbox, c.env).catch((err) => {
       console.error('Gateway restart failed:', err);
     });
     c.executionCtx.waitUntil(bootPromise);

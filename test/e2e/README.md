@@ -1,10 +1,10 @@
-# E2E tests for Moltworker
+# E2E tests for Tedix Claw
 
-End-to-end tests that deploy real Moltworker instances to Cloudflare infrastructure.
+End-to-end tests that deploy real Tedix Claw instances to Cloudflare infrastructure.
 
 ## Why cloud-based e2e tests?
 
-These tests run against actual Cloudflare infrastructure—the same environment users get when they deploy Moltworker themselves. This catches issues that local testing can't:
+These tests run against actual Cloudflare infrastructure—the same environment users get when they deploy Tedix Claw themselves. This catches issues that local testing can't:
 
 - **R2 bucket mounting** only works in production (not with `wrangler dev`)
 - **Container cold starts** and sandbox behavior
@@ -37,7 +37,7 @@ These tests run against actual Cloudflare infrastructure—the same environment 
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                         Deployed worker                                 │
 │                                                                         │
-│   https://moltbot-sandbox-e2e-{id}.{subdomain}.workers.dev              │
+│   https://tedix-claw-e2e-{id}.{subdomain}.workers.dev              │
 │                                                                         │
 │   Protected by Cloudflare Access:                                       │
 │   - Service token (for automated tests)                                 │
@@ -75,7 +75,7 @@ navigate to admin page to approve device
 ===
 TOKEN=$(cat "$CCTR_FIXTURE_DIR/gateway-token.txt")
 WORKER_URL=$(cat "$CCTR_FIXTURE_DIR/worker-url.txt")
-./pw --session=moltworker-e2e open "$WORKER_URL/_admin/?token=$TOKEN"
+./pw --session=tedix-claw-e2e open "$WORKER_URL/_admin/?token=$TOKEN"
 ---
 ```
 
@@ -115,7 +115,7 @@ Here's a complete test that approves a device and sends a chat message:
 wait for Approve All button and click it
 %require
 ===
-./pw --session=moltworker-e2e run-code "async page => {
+./pw --session=tedix-claw-e2e run-code "async page => {
   const btn = await page.waitForSelector('button:has-text(\"Approve All\")', { timeout: 120000 });
   await btn.click();
 }"
@@ -125,7 +125,7 @@ wait for Approve All button and click it
 wait for approval to complete
 %require
 ===
-./pw --session=moltworker-e2e run-code "async page => {
+./pw --session=tedix-claw-e2e run-code "async page => {
   await page.waitForSelector('text=No pending pairing requests', { timeout: 120000 });
 }"
 ---
@@ -134,7 +134,7 @@ wait for approval to complete
 type math question into chat
 %require
 ===
-./pw --session=moltworker-e2e run-code "async page => {
+./pw --session=tedix-claw-e2e run-code "async page => {
   const textarea = await page.waitForSelector('textarea');
   await textarea.fill('What is 847293 + 651824? Reply with just the number.');
 }"
@@ -143,7 +143,7 @@ type math question into chat
 ===
 wait for response containing the correct answer
 ===
-./pw --session=moltworker-e2e run-code "async page => {
+./pw --session=tedix-claw-e2e run-code "async page => {
   await page.waitForSelector('text=1499117', { timeout: 120000 });
 }"
 ---
@@ -182,4 +182,4 @@ PLAYWRIGHT_HEADED=1 cctr test/e2e/
 
 ### View test videos
 
-Videos are saved to `/tmp/moltworker-e2e-videos/` after each run.
+Videos are saved to `/tmp/tedix-claw-e2e-videos/` after each run.

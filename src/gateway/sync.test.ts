@@ -42,9 +42,8 @@ describe('syncToR2', () => {
     it('returns error when source has no config file', async () => {
       const { sandbox, startProcessMock } = createMockSandbox();
       startProcessMock
-        .mockResolvedValueOnce(createMockProcess('s3fs on /data/moltbot type fuse.s3fs\n'))
-        .mockResolvedValueOnce(createMockProcess('')) // No openclaw.json
-        .mockResolvedValueOnce(createMockProcess('')); // No clawdbot.json either
+        .mockResolvedValueOnce(createMockProcess('s3fs on /data/openclaw type fuse.s3fs\n'))
+        .mockResolvedValueOnce(createMockProcess('')); // No openclaw.json
 
       const env = createMockEnvWithR2();
 
@@ -62,7 +61,7 @@ describe('syncToR2', () => {
 
       // Calls: mount check, check openclaw.json, rsync, cat timestamp
       startProcessMock
-        .mockResolvedValueOnce(createMockProcess('s3fs on /data/moltbot type fuse.s3fs\n'))
+        .mockResolvedValueOnce(createMockProcess('s3fs on /data/openclaw type fuse.s3fs\n'))
         .mockResolvedValueOnce(createMockProcess('ok'))
         .mockResolvedValueOnce(createMockProcess(''))
         .mockResolvedValueOnce(createMockProcess(timestamp));
@@ -80,7 +79,7 @@ describe('syncToR2', () => {
 
       // Calls: mount check, check openclaw.json, rsync (fails), cat timestamp (empty)
       startProcessMock
-        .mockResolvedValueOnce(createMockProcess('s3fs on /data/moltbot type fuse.s3fs\n'))
+        .mockResolvedValueOnce(createMockProcess('s3fs on /data/openclaw type fuse.s3fs\n'))
         .mockResolvedValueOnce(createMockProcess('ok'))
         .mockResolvedValueOnce(createMockProcess('', { exitCode: 1 }))
         .mockResolvedValueOnce(createMockProcess(''));
@@ -98,7 +97,7 @@ describe('syncToR2', () => {
       const timestamp = '2026-01-27T12:00:00+00:00';
 
       startProcessMock
-        .mockResolvedValueOnce(createMockProcess('s3fs on /data/moltbot type fuse.s3fs\n'))
+        .mockResolvedValueOnce(createMockProcess('s3fs on /data/openclaw type fuse.s3fs\n'))
         .mockResolvedValueOnce(createMockProcess('ok'))
         .mockResolvedValueOnce(createMockProcess(''))
         .mockResolvedValueOnce(createMockProcess(timestamp));
@@ -113,7 +112,7 @@ describe('syncToR2', () => {
       expect(rsyncCall).toContain('--no-times');
       expect(rsyncCall).toContain('--delete');
       expect(rsyncCall).toContain('/root/.openclaw/');
-      expect(rsyncCall).toContain('/data/moltbot/openclaw/');
+      expect(rsyncCall).toContain('/data/openclaw/openclaw/');
     });
   });
 });

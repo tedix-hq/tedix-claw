@@ -4,7 +4,7 @@ Guidelines for AI agents working on this codebase.
 
 ## Project Overview
 
-This is a Cloudflare Worker that runs [OpenClaw](https://github.com/openclaw/openclaw) (formerly Moltbot/Clawdbot) in a Cloudflare Sandbox container. It provides:
+This is a Cloudflare Worker that runs [OpenClaw](https://github.com/openclaw/openclaw) (formerly OpenClaw/Clawdbot) in a Cloudflare Sandbox container. It provides:
 - Proxying to the OpenClaw gateway (web UI + WebSocket)
 - Admin UI at `/_admin/` for device management
 - API endpoints at `/api/*` for device pairing
@@ -45,7 +45,7 @@ src/
 
 - `DEV_MODE` - Skips CF Access auth AND bypasses device pairing (maps to `OPENCLAW_DEV_MODE` for container)
 - `DEBUG_ROUTES` - Enables `/debug/*` routes (disabled by default)
-- See `src/types.ts` for full `MoltbotEnv` interface
+- See `src/types.ts` for full `OpenClawEnv` interface
 
 ### CLI Commands
 
@@ -200,7 +200,7 @@ These are the env vars passed TO the container (internal names):
 | `CLOUDFLARE_AI_GATEWAY_API_KEY` | (env var) | Native AI Gateway key |
 | `CF_AI_GATEWAY_ACCOUNT_ID` | (env var) | Account ID for AI Gateway |
 | `CF_AI_GATEWAY_GATEWAY_ID` | (env var) | Gateway ID for AI Gateway |
-| `OPENCLAW_GATEWAY_TOKEN` | `--token` flag | Mapped from `MOLTBOT_GATEWAY_TOKEN` |
+| `OPENCLAW_GATEWAY_TOKEN` | `--token` flag | Mapped from `GATEWAY_TOKEN` |
 | `OPENCLAW_DEV_MODE` | `controlUi.allowInsecureAuth` | Mapped from `DEV_MODE` |
 | `TELEGRAM_BOT_TOKEN` | `channels.telegram.botToken` | |
 | `DISCORD_BOT_TOKEN` | `channels.discord.token` | |
@@ -229,7 +229,7 @@ See [OpenClaw docs](https://docs.openclaw.ai/) for full schema.
 
 ### Adding a New Environment Variable
 
-1. Add to `MoltbotEnv` interface in `src/types.ts`
+1. Add to `OpenClawEnv` interface in `src/types.ts`
 2. If passed to container, add to `buildEnvVars()` in `src/gateway/env.ts`
 3. Update `.dev.vars.example`
 4. Document in README.md secrets table
@@ -248,13 +248,13 @@ Enable debug routes with `DEBUG_ROUTES=true` and check `/debug/processes`.
 
 ## R2 Storage Notes
 
-R2 is mounted via s3fs at `/data/moltbot`. Important gotchas:
+R2 is mounted via s3fs at `/data/openclaw`. Important gotchas:
 
 - **rsync compatibility**: Use `rsync -r --no-times` instead of `rsync -a`. s3fs doesn't support setting timestamps, which causes rsync to fail with "Input/output error".
 
 - **Mount checking**: Don't rely on `sandbox.mountBucket()` error messages to detect "already mounted" state. Instead, check `mount | grep s3fs` to verify the mount status.
 
-- **Never delete R2 data**: The mount directory `/data/moltbot` IS the R2 bucket. Running `rm -rf /data/moltbot/*` will DELETE your backup data. Always check mount status before any destructive operations.
+- **Never delete R2 data**: The mount directory `/data/openclaw` IS the R2 bucket. Running `rm -rf /data/openclaw/*` will DELETE your backup data. Always check mount status before any destructive operations.
 
 - **Process status**: The sandbox API's `proc.status` may not update immediately after a process completes. Instead of checking `proc.status === 'completed'`, verify success by checking for expected output (e.g., timestamp file exists after sync).
 

@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "moltbot-sandbox",
+  "name": "tedix-claw",
   "main": "src/index.ts",
   "compatibility_date": "2025-05-06",
   "compatibility_flags": ["nodejs_compat"],
@@ -32,7 +32,7 @@
   "build": {
     "command": "npm run build",
   },
-  // Container configuration for the Moltbot sandbox
+  // Container configuration for the OpenClaw sandbox
   "containers": [
     {
       "class_name": "Sandbox",
@@ -55,14 +55,14 @@
       "tag": "v1",
     },
   ],
-  // R2 bucket for persistent storage (moltbot data, conversations, etc.)
+  // R2 bucket for persistent storage (openclaw data, conversations, etc.)
   "r2_buckets": [
     {
-      "binding": "MOLTBOT_BUCKET",
-      "bucket_name": "moltbot-data",
+      "binding": "OPENCLAW_BUCKET",
+      "bucket_name": "openclaw-data",
     },
   ],
-  // Cron trigger to sync moltbot data to R2 every 5 minutes
+  // Cron trigger to sync openclaw data to R2 every 5 minutes
   "triggers": {
     "crons": ["*/5 * * * *"],
   },
@@ -85,7 +85,7 @@
   //   - AI_GATEWAY_BASE_URL: Gateway endpoint URL
   //
   // Authentication:
-  // - MOLTBOT_GATEWAY_TOKEN: Token to protect gateway access
+  // - GATEWAY_TOKEN: Token to protect gateway access
   // - CF_ACCESS_TEAM_DOMAIN: Cloudflare Access team domain
   // - CF_ACCESS_AUD: Cloudflare Access application audience
   //

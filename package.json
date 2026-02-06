@@ -1,9 +1,9 @@
 {
-  "name": "moltbot-sandbox",
+  "name": "tedix-claw",
   "version": "1.0.0",
   "type": "module",
   "private": true,
-  "description": "Run Moltbot personal AI assistant in a Cloudflare Sandbox",
+  "description": "Run OpenClaw personal AI assistant in a Cloudflare Sandbox",
   "scripts": {
     "build": "vite build",
     "deploy": "npm run build && wrangler deploy",
@@ -49,7 +49,7 @@
       "ANTHROPIC_API_KEY": {
         "description": "Your [Anthropic API key](https://console.anthropic.com/)."
       },
-      "MOLTBOT_GATEWAY_TOKEN": {
+      "GATEWAY_TOKEN": {
         "description": "Token for gateway access. Generate with: openssl rand -hex 32"
       }
     }

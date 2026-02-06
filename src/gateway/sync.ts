@@ -1,5 +1,5 @@
 import type { Sandbox } from '@cloudflare/sandbox';
-import type { MoltbotEnv } from '../types';
+import type { OpenClawEnv } from '../types';
 import { R2_MOUNT_PATH } from '../config';
 import { mountR2Storage } from './r2';
 import { waitForProcess } from './utils';
@@ -21,7 +21,7 @@ export interface SyncResult {
  * 4. Writes a timestamp file for tracking
  *
  * Syncs three directories:
- * - Config: /root/.openclaw/ (or /root/.clawdbot/) → R2:/openclaw/
+ * - Config: /root/.openclaw/ → R2:/openclaw/
  * - Workspace: /root/clawd/ → R2:/workspace/ (IDENTITY.md, MEMORY.md, memory/, assets/)
  * - Skills: /root/clawd/skills/ → R2:/skills/
  *
@@ -29,7 +29,7 @@ export interface SyncResult {
  * @param env - Worker environment bindings
  * @returns SyncResult with success status and optional error details
  */
-export async function syncToR2(sandbox: Sandbox, env: MoltbotEnv): Promise<SyncResult> {
+export async function syncToR2(sandbox: Sandbox, env: OpenClawEnv): Promise<SyncResult> {
   // Check if R2 is configured
   if (!env.R2_ACCESS_KEY_ID || !env.R2_SECRET_ACCESS_KEY || !env.CF_ACCOUNT_ID) {
     return { success: false, error: 'R2 storage is not configured' };
@@ -41,31 +41,20 @@ export async function syncToR2(sandbox: Sandbox, env: MoltbotEnv): Promise<SyncR
     return { success: false, error: 'Failed to mount R2 storage' };
   }
 
-  // Determine which config directory exists
-  // Check new path first, fall back to legacy
-  let configDir = '/root/.openclaw';
+  // Verify config exists before syncing
+  const configDir = '/root/.openclaw';
   try {
-    const checkNew = await sandbox.startProcess(
+    const checkConfig = await sandbox.startProcess(
       'test -f /root/.openclaw/openclaw.json && echo "ok"',
     );
-    await waitForProcess(checkNew, 5000);
-    const newLogs = await checkNew.getLogs();
-    if (!newLogs.stdout?.includes('ok')) {
-      // Try legacy path
-      const checkLegacy = await sandbox.startProcess(
-        'test -f /root/.clawdbot/clawdbot.json && echo "ok"',
-      );
-      await waitForProcess(checkLegacy, 5000);
-      const legacyLogs = await checkLegacy.getLogs();
-      if (legacyLogs.stdout?.includes('ok')) {
-        configDir = '/root/.clawdbot';
-      } else {
-        return {
-          success: false,
-          error: 'Sync aborted: no config file found',
-          details: 'Neither openclaw.json nor clawdbot.json found in config directory.',
-        };
-      }
+    await waitForProcess(checkConfig, 5000);
+    const logs = await checkConfig.getLogs();
+    if (!logs.stdout?.includes('ok')) {
+      return {
+        success: false,
+        error: 'Sync aborted: no config file found',
+        details: 'openclaw.json not found in config directory.',
+      };
     }
   } catch (err) {
     return {
@@ -75,8 +64,7 @@ export async function syncToR2(sandbox: Sandbox, env: MoltbotEnv): Promise<SyncR
     };
   }
 
-  // Sync to the new openclaw/ R2 prefix (even if source is legacy .clawdbot)
-  // Also sync workspace directory (excluding skills since they're synced separately)
+  // Sync config, workspace, and skills to R2
   const syncCmd = `rsync -r --no-times --delete --exclude='*.lock' --exclude='*.log' --exclude='*.tmp' ${configDir}/ ${R2_MOUNT_PATH}/openclaw/ && rsync -r --no-times --delete --exclude='skills' /root/clawd/ ${R2_MOUNT_PATH}/workspace/ && rsync -r --no-times --delete /root/clawd/skills/ ${R2_MOUNT_PATH}/skills/ && date -Iseconds > ${R2_MOUNT_PATH}/.last-sync`;
 
   try {

@@ -1,8 +1,8 @@
 /**
- * Moltbot + Cloudflare Sandbox
+ * OpenClaw + Cloudflare Sandbox
  *
- * This Worker runs Moltbot personal AI assistant in a Cloudflare Sandbox container.
- * It proxies all requests to the Moltbot Gateway's web UI and WebSocket endpoint.
+ * This Worker runs OpenClaw personal AI assistant in a Cloudflare Sandbox container.
+ * It proxies all requests to the OpenClaw Gateway's web UI and WebSocket endpoint.
  *
  * Features:
  * - Web UI (Control Dashboard + WebChat) at /
@@ -14,7 +14,7 @@
  * - ANTHROPIC_API_KEY: Your Anthropic API key
  *
  * Optional secrets:
- * - MOLTBOT_GATEWAY_TOKEN: Token to protect gateway access
+ * - GATEWAY_TOKEN: Token to protect gateway access
  * - TELEGRAM_BOT_TOKEN: Telegram bot token
  * - DISCORD_BOT_TOKEN: Discord bot token
  * - SLACK_BOT_TOKEN + SLACK_APP_TOKEN: Slack tokens
@@ -23,10 +23,10 @@
 import { Hono } from 'hono';
 import { getSandbox, Sandbox, type SandboxOptions } from '@cloudflare/sandbox';
 
-import type { AppEnv, MoltbotEnv } from './types';
-import { MOLTBOT_PORT } from './config';
+import type { AppEnv, OpenClawEnv } from './types';
+import { GATEWAY_PORT } from './config';
 import { createAccessMiddleware } from './auth';
-import { ensureMoltbotGateway, findExistingMoltbotProcess, syncToR2 } from './gateway';
+import { ensureGateway, findExistingGateway, syncToR2 } from './gateway';
 import { publicRoutes, api, adminUi, debug, cdp } from './routes';
 import { redactSensitiveParams } from './utils/logging';
 import loadingPageHtml from './assets/loading.html';
@@ -53,12 +53,12 @@ export { Sandbox };
  * Validate required environment variables.
  * Returns an array of missing variable descriptions, or empty array if all are set.
  */
-function validateRequiredEnv(env: MoltbotEnv): string[] {
+function validateRequiredEnv(env: OpenClawEnv): string[] {
   const missing: string[] = [];
   const isTestMode = env.DEV_MODE === 'true' || env.E2E_TEST_MODE === 'true';
 
-  if (!env.MOLTBOT_GATEWAY_TOKEN) {
-    missing.push('MOLTBOT_GATEWAY_TOKEN');
+  if (!env.GATEWAY_TOKEN) {
+    missing.push('GATEWAY_TOKEN');
   }
 
   // CF Access vars not required in dev/test mode since auth is skipped
@@ -102,7 +102,7 @@ function validateRequiredEnv(env: MoltbotEnv): string[] {
  *   npx wrangler secret put SANDBOX_SLEEP_AFTER
  *   # Enter: 10m (or 1h, 30m, etc.)
  */
-function buildSandboxOptions(env: MoltbotEnv): SandboxOptions {
+function buildSandboxOptions(env: OpenClawEnv): SandboxOptions {
   const sleepAfter = env.SANDBOX_SLEEP_AFTER?.toLowerCase() || 'never';
 
   // 'never' means keep the container alive indefinitely
@@ -135,7 +135,7 @@ app.use('*', async (c, next) => {
 // Middleware: Initialize sandbox for all requests
 app.use('*', async (c, next) => {
   const options = buildSandboxOptions(c.env);
-  const sandbox = getSandbox(c.env.Sandbox, 'moltbot', options);
+  const sandbox = getSandbox(c.env.Sandbox, 'openclaw', options);
   c.set('sandbox', sandbox);
   await next();
 });
@@ -223,7 +223,7 @@ app.use('/debug/*', async (c, next) => {
 app.route('/debug', debug);
 
 // =============================================================================
-// CATCH-ALL: Proxy to Moltbot gateway
+// CATCH-ALL: Proxy to OpenClaw gateway
 // =============================================================================
 
 app.all('*', async (c) => {
@@ -234,7 +234,7 @@ app.all('*', async (c) => {
   console.log('[PROXY] Handling request:', url.pathname);
 
   // Check if gateway is already running
-  const existingProcess = await findExistingMoltbotProcess(sandbox);
+  const existingProcess = await findExistingGateway(sandbox);
   const isGatewayReady = existingProcess !== null && existingProcess.status === 'running';
 
   // For browser requests (non-WebSocket, non-API), show loading page if gateway isn't ready
@@ -246,7 +246,7 @@ app.all('*', async (c) => {
 
     // Start the gateway in the background (don't await)
     c.executionCtx.waitUntil(
-      ensureMoltbotGateway(sandbox, c.env).catch((err: Error) => {
+      ensureGateway(sandbox, c.env).catch((err: Error) => {
         console.error('[PROXY] Background gateway start failed:', err);
       }),
     );
@@ -255,11 +255,11 @@ app.all('*', async (c) => {
     return c.html(loadingPageHtml);
   }
 
-  // Ensure moltbot is running (this will wait for startup)
+  // Ensure openclaw is running (this will wait for startup)
   try {
-    await ensureMoltbotGateway(sandbox, c.env);
+    await ensureGateway(sandbox, c.env);
   } catch (error) {
-    console.error('[PROXY] Failed to start Moltbot:', error);
+    console.error('[PROXY] Failed to start OpenClaw:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
     let hint = 'Check worker logs with: wrangler tail';
@@ -271,7 +271,7 @@ app.all('*', async (c) => {
 
     return c.json(
       {
-        error: 'Moltbot gateway failed to start',
+        error: 'OpenClaw gateway failed to start',
         details: errorMessage,
         hint,
       },
@@ -279,12 +279,12 @@ app.all('*', async (c) => {
     );
   }
 
-  // Proxy to Moltbot with WebSocket message interception
+  // Proxy to OpenClaw with WebSocket message interception
   if (isWebSocketRequest) {
     const debugLogs = c.env.DEBUG_ROUTES === 'true';
     const redactedSearch = redactSensitiveParams(url);
 
-    console.log('[WS] Proxying WebSocket connection to Moltbot');
+    console.log('[WS] Proxying WebSocket connection to OpenClaw');
     if (debugLogs) {
       console.log('[WS] URL:', url.pathname + redactedSearch);
     }
@@ -293,14 +293,14 @@ app.all('*', async (c) => {
     // CF Access redirects strip query params, so authenticated users lose ?token=.
     // Since the user already passed CF Access auth, we inject the token server-side.
     let wsRequest = request;
-    if (c.env.MOLTBOT_GATEWAY_TOKEN && !url.searchParams.has('token')) {
+    if (c.env.GATEWAY_TOKEN && !url.searchParams.has('token')) {
       const tokenUrl = new URL(url.toString());
-      tokenUrl.searchParams.set('token', c.env.MOLTBOT_GATEWAY_TOKEN);
+      tokenUrl.searchParams.set('token', c.env.GATEWAY_TOKEN);
       wsRequest = new Request(tokenUrl.toString(), request);
     }
 
     // Get WebSocket connection to the container
-    const containerResponse = await sandbox.wsConnect(wsRequest, MOLTBOT_PORT);
+    const containerResponse = await sandbox.wsConnect(wsRequest, GATEWAY_PORT);
     console.log('[WS] wsConnect response status:', containerResponse.status);
 
     // Get the container-side WebSocket
@@ -429,12 +429,12 @@ app.all('*', async (c) => {
   }
 
   console.log('[HTTP] Proxying:', url.pathname + url.search);
-  const httpResponse = await sandbox.containerFetch(request, MOLTBOT_PORT);
+  const httpResponse = await sandbox.containerFetch(request, GATEWAY_PORT);
   console.log('[HTTP] Response status:', httpResponse.status);
 
   // Add debug header to verify worker handled the request
   const newHeaders = new Headers(httpResponse.headers);
-  newHeaders.set('X-Worker-Debug', 'proxy-to-moltbot');
+  newHeaders.set('X-Worker-Debug', 'proxy-to-openclaw');
   newHeaders.set('X-Debug-Path', url.pathname);
 
   return new Response(httpResponse.body, {
@@ -446,15 +446,15 @@ app.all('*', async (c) => {
 
 /**
  * Scheduled handler for cron triggers.
- * Syncs moltbot config/state from container to R2 for persistence.
+ * Syncs openclaw config/state from container to R2 for persistence.
  */
 async function scheduled(
   _event: ScheduledEvent,
-  env: MoltbotEnv,
+  env: OpenClawEnv,
   _ctx: ExecutionContext,
 ): Promise<void> {
   const options = buildSandboxOptions(env);
-  const sandbox = getSandbox(env.Sandbox, 'moltbot', options);
+  const sandbox = getSandbox(env.Sandbox, 'openclaw', options);
 
   console.log('[cron] Starting backup sync to R2...');
   const result = await syncToR2(sandbox, env);

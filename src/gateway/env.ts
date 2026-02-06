@@ -1,4 +1,4 @@
-import type { MoltbotEnv } from '../types';
+import type { OpenClawEnv } from '../types';
 
 /**
  * Build environment variables to pass to the OpenClaw container process
@@ -6,7 +6,7 @@ import type { MoltbotEnv } from '../types';
  * @param env - Worker environment bindings
  * @returns Environment variables record
  */
-export function buildEnvVars(env: MoltbotEnv): Record<string, string> {
+export function buildEnvVars(env: OpenClawEnv): Record<string, string> {
   const envVars: Record<string, string> = {};
 
   // Cloudflare AI Gateway configuration (new native provider)
@@ -36,8 +36,8 @@ export function buildEnvVars(env: MoltbotEnv): Record<string, string> {
     envVars.ANTHROPIC_BASE_URL = env.ANTHROPIC_BASE_URL;
   }
 
-  // Map MOLTBOT_GATEWAY_TOKEN to OPENCLAW_GATEWAY_TOKEN (container expects this name)
-  if (env.MOLTBOT_GATEWAY_TOKEN) envVars.OPENCLAW_GATEWAY_TOKEN = env.MOLTBOT_GATEWAY_TOKEN;
+  // Map GATEWAY_TOKEN to OPENCLAW_GATEWAY_TOKEN (container expects this name)
+  if (env.GATEWAY_TOKEN) envVars.OPENCLAW_GATEWAY_TOKEN = env.GATEWAY_TOKEN;
   if (env.DEV_MODE) envVars.OPENCLAW_DEV_MODE = env.DEV_MODE;
   if (env.TELEGRAM_BOT_TOKEN) envVars.TELEGRAM_BOT_TOKEN = env.TELEGRAM_BOT_TOKEN;
   if (env.TELEGRAM_DM_POLICY) envVars.TELEGRAM_DM_POLICY = env.TELEGRAM_DM_POLICY;

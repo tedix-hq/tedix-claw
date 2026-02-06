@@ -115,8 +115,8 @@ jobs:
         if: always()
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg imagemagick bc
-          if ls /tmp/moltworker-e2e-videos/*.webm 1>/dev/null 2>&1; then
-            for webm in /tmp/moltworker-e2e-videos/*.webm; do
+          if ls /tmp/tedix-claw-e2e-videos/*.webm 1>/dev/null 2>&1; then
+            for webm in /tmp/tedix-claw-e2e-videos/*.webm; do
               mp4="${webm%.webm}.mp4"
               thumb="${webm%.webm}.png"
               
