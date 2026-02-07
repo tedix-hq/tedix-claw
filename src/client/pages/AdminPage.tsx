@@ -1,22 +1,22 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from "react";
 import {
-  listDevices,
-  approveDevice,
-  approveAllDevices,
-  restartGateway,
-  getStorageStatus,
-  triggerSync,
-  getAuthProviders,
-  saveSetupToken,
-  removeAuthProvider,
   AuthError,
-  type PendingDevice,
-  type PairedDevice,
-  type DeviceListResponse,
-  type StorageStatusResponse,
   type AuthProvider,
-} from '../api';
-import './AdminPage.css';
+  approveAllDevices,
+  approveDevice,
+  type DeviceListResponse,
+  getAuthProviders,
+  getStorageStatus,
+  listDevices,
+  type PairedDevice,
+  type PendingDevice,
+  removeAuthProvider,
+  restartGateway,
+  type StorageStatusResponse,
+  saveSetupToken,
+  triggerSync,
+} from "../api";
+import "./AdminPage.css";
 
 // Small inline spinner for buttons
 function ButtonSpinner() {
@@ -24,7 +24,7 @@ function ButtonSpinner() {
 }
 
 function formatSyncTime(isoString: string | null) {
-  if (!isoString) return 'Never';
+  if (!isoString) return "Never";
   try {
     const date = new Date(isoString);
     return date.toLocaleString();
@@ -60,7 +60,7 @@ export default function AdminPage() {
   const [syncInProgress, setSyncInProgress] = useState(false);
   const [authProviders, setAuthProviders] = useState<AuthProvider[]>([]);
   const [authLoading, setAuthLoading] = useState(true);
-  const [setupToken, setSetupToken] = useState('');
+  const [setupToken, setSetupToken] = useState("");
   const [setupTokenSaving, setSetupTokenSaving] = useState(false);
   const [deletingProvider, setDeletingProvider] = useState<string | null>(null);
 
@@ -78,9 +78,9 @@ export default function AdminPage() {
       }
     } catch (err) {
       if (err instanceof AuthError) {
-        setError('Authentication required. Please log in via Cloudflare Access.');
+        setError("Authentication required. Please log in via Cloudflare Access.");
       } else {
-        setError(err instanceof Error ? err.message : 'Failed to fetch devices');
+        setError(err instanceof Error ? err.message : "Failed to fetch devices");
       }
     } finally {
       setLoading(false);
@@ -93,7 +93,7 @@ export default function AdminPage() {
       setStorageStatus(status);
     } catch (err) {
       // Don't show error for storage status - it's not critical
-      console.error('Failed to fetch storage status:', err);
+      console.error("Failed to fetch storage status:", err);
     }
   }, []);
 
@@ -103,7 +103,7 @@ export default function AdminPage() {
       const data = await getAuthProviders();
       setAuthProviders(data.providers || []);
     } catch (err) {
-      console.error('Failed to fetch auth providers:', err);
+      console.error("Failed to fetch auth providers:", err);
     } finally {
       setAuthLoading(false);
     }
@@ -123,10 +123,10 @@ export default function AdminPage() {
         // Refresh the list
         await fetchDevices();
       } else {
-        setError(result.error || 'Approval failed');
+        setError(result.error || "Approval failed");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to approve device');
+      setError(err instanceof Error ? err.message : "Failed to approve device");
     } finally {
       setActionInProgress(null);
     }
@@ -135,7 +135,7 @@ export default function AdminPage() {
   const handleApproveAll = async () => {
     if (pending.length === 0) return;
 
-    setActionInProgress('all');
+    setActionInProgress("all");
     try {
       const result = await approveAllDevices();
       if (result.failed && result.failed.length > 0) {
@@ -144,7 +144,7 @@ export default function AdminPage() {
       // Refresh the list
       await fetchDevices();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to approve devices');
+      setError(err instanceof Error ? err.message : "Failed to approve devices");
     } finally {
       setActionInProgress(null);
     }
@@ -153,7 +153,7 @@ export default function AdminPage() {
   const handleRestartGateway = async () => {
     if (
       !confirm(
-        'Are you sure you want to restart the gateway? This will disconnect all clients temporarily.',
+        "Are you sure you want to restart the gateway? This will disconnect all clients temporarily.",
       )
     ) {
       return;
@@ -165,12 +165,12 @@ export default function AdminPage() {
       if (result.success) {
         setError(null);
         // Show success message briefly
-        alert('Gateway restart initiated. Clients will reconnect automatically.');
+        alert("Gateway restart initiated. Clients will reconnect automatically.");
       } else {
-        setError(result.error || 'Failed to restart gateway');
+        setError(result.error || "Failed to restart gateway");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to restart gateway');
+      setError(err instanceof Error ? err.message : "Failed to restart gateway");
     } finally {
       setRestartInProgress(false);
     }
@@ -181,16 +181,16 @@ export default function AdminPage() {
 
     setSetupTokenSaving(true);
     try {
-      const result = await saveSetupToken('anthropic', setupToken.trim());
+      const result = await saveSetupToken("anthropic", setupToken.trim());
       if (result.success) {
-        setSetupToken('');
+        setSetupToken("");
         setError(null);
         await fetchAuthProviders();
       } else {
-        setError(result.error || 'Failed to save setup token');
+        setError(result.error || "Failed to save setup token");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save setup token');
+      setError(err instanceof Error ? err.message : "Failed to save setup token");
     } finally {
       setSetupTokenSaving(false);
     }
@@ -204,10 +204,10 @@ export default function AdminPage() {
         setError(null);
         await fetchAuthProviders();
       } else {
-        setError(result.error || 'Failed to remove provider');
+        setError(result.error || "Failed to remove provider");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to remove provider');
+      setError(err instanceof Error ? err.message : "Failed to remove provider");
     } finally {
       setDeletingProvider(null);
     }
@@ -222,10 +222,10 @@ export default function AdminPage() {
         setStorageStatus((prev) => (prev ? { ...prev, lastSync: result.lastSync || null } : null));
         setError(null);
       } else {
-        setError(result.error || 'Sync failed');
+        setError(result.error || "Sync failed");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to sync');
+      setError(err instanceof Error ? err.message : "Failed to sync");
     } finally {
       setSyncInProgress(false);
     }
@@ -236,7 +236,7 @@ export default function AdminPage() {
       {error && (
         <div className="error-banner">
           <span>{error}</span>
-          <button onClick={() => setError(null)} className="dismiss-btn">
+          <button type="button" onClick={() => setError(null)} className="dismiss-btn">
             Dismiss
           </button>
         </div>
@@ -248,18 +248,18 @@ export default function AdminPage() {
             <strong>R2 Storage Not Configured</strong>
             <p>
               Paired devices and conversations will be lost when the container restarts. To enable
-              persistent storage, configure R2 credentials. See the{' '}
+              persistent storage, configure R2 credentials. See the{" "}
               <a
                 href="https://github.com/cloudflare/tedix-claw"
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 README
-              </a>{' '}
+              </a>{" "}
               for setup instructions.
             </p>
             {storageStatus.missing && (
-              <p className="missing-secrets">Missing: {storageStatus.missing.join(', ')}</p>
+              <p className="missing-secrets">Missing: {storageStatus.missing.join(", ")}</p>
             )}
           </div>
         </div>
@@ -277,12 +277,13 @@ export default function AdminPage() {
               </span>
             </div>
             <button
+              type="button"
               className="btn btn-secondary btn-sm"
               onClick={handleSync}
               disabled={syncInProgress}
             >
               {syncInProgress && <ButtonSpinner />}
-              {syncInProgress ? 'Syncing...' : 'Backup Now'}
+              {syncInProgress ? "Syncing..." : "Backup Now"}
             </button>
           </div>
         </div>
@@ -292,12 +293,13 @@ export default function AdminPage() {
         <div className="section-header">
           <h2>Gateway Controls</h2>
           <button
+            type="button"
             className="btn btn-danger"
             onClick={handleRestartGateway}
             disabled={restartInProgress}
           >
             {restartInProgress && <ButtonSpinner />}
-            {restartInProgress ? 'Restarting...' : 'Restart Gateway'}
+            {restartInProgress ? "Restarting..." : "Restart Gateway"}
           </button>
         </div>
         <p className="hint">
@@ -310,6 +312,7 @@ export default function AdminPage() {
         <div className="section-header">
           <h2>Model Providers</h2>
           <button
+            type="button"
             className="btn btn-secondary btn-sm"
             onClick={fetchAuthProviders}
             disabled={authLoading}
@@ -338,18 +341,19 @@ export default function AdminPage() {
                       )}
                     </div>
                     <button
+                      type="button"
                       className="btn btn-danger btn-sm"
                       onClick={() => handleDeleteProvider(provider.id)}
                       disabled={deletingProvider === provider.id}
                     >
                       {deletingProvider === provider.id && <ButtonSpinner />}
-                      {deletingProvider === provider.id ? 'Removing...' : 'Remove'}
+                      {deletingProvider === provider.id ? "Removing..." : "Remove"}
                     </button>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="empty-state" style={{ padding: '1.5rem 1rem' }}>
+              <div className="empty-state" style={{ padding: "1.5rem 1rem" }}>
                 <p>No providers configured</p>
               </div>
             )}
@@ -362,17 +366,18 @@ export default function AdminPage() {
                 value={setupToken}
                 onChange={(e) => setSetupToken(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && setupToken.trim()) handleSaveSetupToken();
+                  if (e.key === "Enter" && setupToken.trim()) handleSaveSetupToken();
                 }}
                 disabled={setupTokenSaving}
               />
               <button
+                type="button"
                 className="btn btn-primary"
                 onClick={handleSaveSetupToken}
                 disabled={setupTokenSaving || !setupToken.trim()}
               >
                 {setupTokenSaving && <ButtonSpinner />}
-                {setupTokenSaving ? 'Saving...' : 'Save Token'}
+                {setupTokenSaving ? "Saving..." : "Save Token"}
               </button>
             </div>
             <p className="token-form-hint">
@@ -395,17 +400,23 @@ export default function AdminPage() {
               <div className="header-actions">
                 {pending.length > 0 && (
                   <button
+                    type="button"
                     className="btn btn-primary"
                     onClick={handleApproveAll}
                     disabled={actionInProgress !== null}
                   >
-                    {actionInProgress === 'all' && <ButtonSpinner />}
-                    {actionInProgress === 'all'
-                      ? 'Approving...'
+                    {actionInProgress === "all" && <ButtonSpinner />}
+                    {actionInProgress === "all"
+                      ? "Approving..."
                       : `Approve All (${pending.length})`}
                   </button>
                 )}
-                <button className="btn btn-secondary" onClick={fetchDevices} disabled={loading}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={fetchDevices}
+                  disabled={loading}
+                >
                   Refresh
                 </button>
               </div>
@@ -424,7 +435,7 @@ export default function AdminPage() {
                   <div key={device.requestId} className="device-card pending">
                     <div className="device-header">
                       <span className="device-name">
-                        {device.displayName || device.deviceId || 'Unknown Device'}
+                        {device.displayName || device.deviceId || "Unknown Device"}
                       </span>
                       <span className="device-badge pending">Pending</span>
                     </div>
@@ -468,12 +479,13 @@ export default function AdminPage() {
                     </div>
                     <div className="device-actions">
                       <button
+                        type="button"
                         className="btn btn-success"
                         onClick={() => handleApprove(device.requestId)}
                         disabled={actionInProgress !== null}
                       >
                         {actionInProgress === device.requestId && <ButtonSpinner />}
-                        {actionInProgress === device.requestId ? 'Approving...' : 'Approve'}
+                        {actionInProgress === device.requestId ? "Approving..." : "Approve"}
                       </button>
                     </div>
                   </div>
@@ -497,7 +509,7 @@ export default function AdminPage() {
                   <div key={device.deviceId || index} className="device-card paired">
                     <div className="device-header">
                       <span className="device-name">
-                        {device.displayName || device.deviceId || 'Unknown Device'}
+                        {device.displayName || device.deviceId || "Unknown Device"}
                       </span>
                       <span className="device-badge paired">Paired</span>
                     </div>

@@ -1,5 +1,5 @@
-import { jwtVerify, createRemoteJWKSet } from 'jose';
-import type { JWTPayload } from '../types';
+import { createRemoteJWKSet, jwtVerify } from "jose";
+import type { JWTPayload } from "../types";
 
 /**
  * Verify a Cloudflare Access JWT token using the jose library.
@@ -19,7 +19,7 @@ export async function verifyAccessJWT(
   expectedAud: string,
 ): Promise<JWTPayload> {
   // Ensure teamDomain has https:// prefix for issuer check
-  const issuer = teamDomain.startsWith('https://') ? teamDomain : `https://${teamDomain}`;
+  const issuer = teamDomain.startsWith("https://") ? teamDomain : `https://${teamDomain}`;
 
   // Create JWKS from the team domain
   const JWKS = createRemoteJWKSet(new URL(`${issuer}/cdn-cgi/access/certs`));

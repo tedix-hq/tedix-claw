@@ -1,8 +1,8 @@
-import type { Sandbox } from '@cloudflare/sandbox';
-import type { OpenClawEnv } from '../types';
-import { R2_MOUNT_PATH } from '../config';
-import { mountR2Storage } from './r2';
-import { waitForProcess } from './utils';
+import type { Sandbox } from "@cloudflare/sandbox";
+import { R2_MOUNT_PATH } from "../config";
+import type { OpenClawEnv } from "../types";
+import { mountR2Storage } from "./r2";
+import { waitForProcess } from "./utils";
 
 export interface SyncResult {
   success: boolean;
@@ -32,35 +32,35 @@ export interface SyncResult {
 export async function syncToR2(sandbox: Sandbox, env: OpenClawEnv): Promise<SyncResult> {
   // Check if R2 is configured
   if (!env.R2_ACCESS_KEY_ID || !env.R2_SECRET_ACCESS_KEY || !env.CF_ACCOUNT_ID) {
-    return { success: false, error: 'R2 storage is not configured' };
+    return { success: false, error: "R2 storage is not configured" };
   }
 
   // Mount R2 if not already mounted
   const mounted = await mountR2Storage(sandbox, env);
   if (!mounted) {
-    return { success: false, error: 'Failed to mount R2 storage' };
+    return { success: false, error: "Failed to mount R2 storage" };
   }
 
   // Verify config exists before syncing
-  const configDir = '/root/.openclaw';
+  const configDir = "/root/.openclaw";
   try {
     const checkConfig = await sandbox.startProcess(
       'test -f /root/.openclaw/openclaw.json && echo "ok"',
     );
     await waitForProcess(checkConfig, 5000);
     const logs = await checkConfig.getLogs();
-    if (!logs.stdout?.includes('ok')) {
+    if (!logs.stdout?.includes("ok")) {
       return {
         success: false,
-        error: 'Sync aborted: no config file found',
-        details: 'openclaw.json not found in config directory.',
+        error: "Sync aborted: no config file found",
+        details: "openclaw.json not found in config directory.",
       };
     }
   } catch (err) {
     return {
       success: false,
-      error: 'Failed to verify source files',
-      details: err instanceof Error ? err.message : 'Unknown error',
+      error: "Failed to verify source files",
+      details: err instanceof Error ? err.message : "Unknown error",
     };
   }
 
@@ -77,21 +77,21 @@ export async function syncToR2(sandbox: Sandbox, env: OpenClawEnv): Promise<Sync
     const timestampLogs = await timestampProc.getLogs();
     const lastSync = timestampLogs.stdout?.trim();
 
-    if (lastSync && lastSync.match(/^\d{4}-\d{2}-\d{2}/)) {
+    if (lastSync?.match(/^\d{4}-\d{2}-\d{2}/)) {
       return { success: true, lastSync };
     } else {
       const logs = await proc.getLogs();
       return {
         success: false,
-        error: 'Sync failed',
-        details: logs.stderr || logs.stdout || 'No timestamp file created',
+        error: "Sync failed",
+        details: logs.stderr || logs.stdout || "No timestamp file created",
       };
     }
   } catch (err) {
     return {
       success: false,
-      error: 'Sync error',
-      details: err instanceof Error ? err.message : 'Unknown error',
+      error: "Sync error",
+      details: err instanceof Error ? err.message : "Unknown error",
     };
   }
 }

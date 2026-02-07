@@ -9,12 +9,12 @@ export function redactSensitiveParams(url: URL): string {
 
   for (const [key, value] of params) {
     if (sensitivePatterns.test(key) || sensitivePatterns.test(value)) {
-      redactedParams.set(key, '[REDACTED]');
+      redactedParams.set(key, "[REDACTED]");
     } else {
       redactedParams.set(key, value);
     }
   }
 
   const search = redactedParams.toString();
-  return search ? `?${search}` : '';
+  return search ? `?${search}` : "";
 }

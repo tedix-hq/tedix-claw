@@ -1,4 +1,4 @@
-import type { Sandbox } from '@cloudflare/sandbox';
+import type { Sandbox } from "@cloudflare/sandbox";
 
 /**
  * Environment bindings for the OpenClaw Worker

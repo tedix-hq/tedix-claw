@@ -1,9 +1,10 @@
 /**
  * Shared test utilities for mocking sandbox and environment
  */
-import { vi } from 'vitest';
-import type { Sandbox, Process } from '@cloudflare/sandbox';
-import type { OpenClawEnv } from './types';
+
+import type { Process, Sandbox } from "@cloudflare/sandbox";
+import { vi } from "vitest";
+import type { OpenClawEnv } from "./types";
 
 /**
  * Create a minimal OpenClawEnv object for testing
@@ -22,9 +23,9 @@ export function createMockEnv(overrides: Partial<OpenClawEnv> = {}): OpenClawEnv
  */
 export function createMockEnvWithR2(overrides: Partial<OpenClawEnv> = {}): OpenClawEnv {
   return createMockEnv({
-    R2_ACCESS_KEY_ID: 'test-key-id',
-    R2_SECRET_ACCESS_KEY: 'test-secret-key',
-    CF_ACCOUNT_ID: 'test-account-id',
+    R2_ACCESS_KEY_ID: "test-key-id",
+    R2_SECRET_ACCESS_KEY: "test-secret-key",
+    CF_ACCOUNT_ID: "test-account-id",
     ...overrides,
   });
 }
@@ -33,12 +34,12 @@ export function createMockEnvWithR2(overrides: Partial<OpenClawEnv> = {}): OpenC
  * Create a mock process object
  */
 export function createMockProcess(
-  stdout: string = '',
+  stdout: string = "",
   options: { exitCode?: number; stderr?: string; status?: string } = {},
 ): Partial<Process> {
-  const { exitCode = 0, stderr = '', status = 'completed' } = options;
+  const { exitCode = 0, stderr = "", status = "completed" } = options;
   return {
-    status: status as Process['status'],
+    status: status as Process["status"],
     exitCode,
     getLogs: vi.fn().mockResolvedValue({ stdout, stderr }),
   };
@@ -56,10 +57,7 @@ export interface MockSandbox {
  * Create a mock sandbox with configurable behavior
  */
 export function createMockSandbox(
-  options: {
-    mounted?: boolean;
-    processes?: Partial<Process>[];
-  } = {},
+  options: { mounted?: boolean; processes?: Partial<Process>[] } = {},
 ): MockSandbox {
   const mountBucketMock = vi.fn().mockResolvedValue(undefined);
   const listProcessesMock = vi.fn().mockResolvedValue(options.processes || []);
@@ -71,9 +69,9 @@ export function createMockSandbox(
     .mockResolvedValue(
       options.mounted
         ? createMockProcess(
-            's3fs on /data/openclaw type fuse.s3fs (rw,nosuid,nodev,relatime,user_id=0,group_id=0)\n',
+            "s3fs on /data/openclaw type fuse.s3fs (rw,nosuid,nodev,relatime,user_id=0,group_id=0)\n",
           )
-        : createMockProcess(''),
+        : createMockProcess(""),
     );
 
   const sandbox = {
@@ -91,7 +89,7 @@ export function createMockSandbox(
  * Suppress console output during tests
  */
 export function suppressConsole() {
-  vi.spyOn(console, 'log').mockImplementation(() => {});
-  vi.spyOn(console, 'error').mockImplementation(() => {});
-  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  vi.spyOn(console, "log").mockImplementation(() => {});
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  vi.spyOn(console, "warn").mockImplementation(() => {});
 }

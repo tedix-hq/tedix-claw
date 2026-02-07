@@ -1,6 +1,6 @@
-import { Hono } from 'hono';
-import type { AppEnv, OpenClawEnv } from '../types';
-import puppeteer, { type Browser, type Page } from '@cloudflare/puppeteer';
+import puppeteer, { type Browser, type Page } from "@cloudflare/puppeteer";
+import { Hono } from "hono";
+import type { AppEnv, OpenClawEnv } from "../types";
 
 /**
  * CDP (Chrome DevTools Protocol) WebSocket shim
@@ -65,117 +65,117 @@ interface CDPSession {
  *
  * Connect with: ws://host/cdp?secret=<CDP_SECRET>
  */
-cdp.get('/', async (c) => {
+cdp.get("/", async (c) => {
   // Check for WebSocket upgrade
-  const upgradeHeader = c.req.header('Upgrade');
-  if (upgradeHeader?.toLowerCase() !== 'websocket') {
+  const upgradeHeader = c.req.header("Upgrade");
+  if (upgradeHeader?.toLowerCase() !== "websocket") {
     return c.json({
-      error: 'WebSocket upgrade required',
-      hint: 'Connect via WebSocket: ws://host/cdp?secret=<CDP_SECRET>',
+      error: "WebSocket upgrade required",
+      hint: "Connect via WebSocket: ws://host/cdp?secret=<CDP_SECRET>",
       supported_methods: [
         // Browser
-        'Browser.getVersion',
-        'Browser.close',
+        "Browser.getVersion",
+        "Browser.close",
         // Target
-        'Target.createTarget',
-        'Target.closeTarget',
-        'Target.getTargets',
-        'Target.attachToTarget',
+        "Target.createTarget",
+        "Target.closeTarget",
+        "Target.getTargets",
+        "Target.attachToTarget",
         // Page
-        'Page.navigate',
-        'Page.reload',
-        'Page.captureScreenshot',
-        'Page.getFrameTree',
-        'Page.getLayoutMetrics',
-        'Page.bringToFront',
-        'Page.setContent',
-        'Page.printToPDF',
-        'Page.addScriptToEvaluateOnNewDocument',
-        'Page.removeScriptToEvaluateOnNewDocument',
-        'Page.handleJavaScriptDialog',
-        'Page.stopLoading',
-        'Page.getNavigationHistory',
-        'Page.navigateToHistoryEntry',
-        'Page.setBypassCSP',
+        "Page.navigate",
+        "Page.reload",
+        "Page.captureScreenshot",
+        "Page.getFrameTree",
+        "Page.getLayoutMetrics",
+        "Page.bringToFront",
+        "Page.setContent",
+        "Page.printToPDF",
+        "Page.addScriptToEvaluateOnNewDocument",
+        "Page.removeScriptToEvaluateOnNewDocument",
+        "Page.handleJavaScriptDialog",
+        "Page.stopLoading",
+        "Page.getNavigationHistory",
+        "Page.navigateToHistoryEntry",
+        "Page.setBypassCSP",
         // Runtime
-        'Runtime.evaluate',
-        'Runtime.callFunctionOn',
-        'Runtime.getProperties',
-        'Runtime.releaseObject',
-        'Runtime.releaseObjectGroup',
+        "Runtime.evaluate",
+        "Runtime.callFunctionOn",
+        "Runtime.getProperties",
+        "Runtime.releaseObject",
+        "Runtime.releaseObjectGroup",
         // DOM
-        'DOM.getDocument',
-        'DOM.querySelector',
-        'DOM.querySelectorAll',
-        'DOM.getOuterHTML',
-        'DOM.getAttributes',
-        'DOM.setAttributeValue',
-        'DOM.focus',
-        'DOM.getBoxModel',
-        'DOM.scrollIntoViewIfNeeded',
-        'DOM.removeNode',
-        'DOM.setNodeValue',
-        'DOM.setFileInputFiles',
+        "DOM.getDocument",
+        "DOM.querySelector",
+        "DOM.querySelectorAll",
+        "DOM.getOuterHTML",
+        "DOM.getAttributes",
+        "DOM.setAttributeValue",
+        "DOM.focus",
+        "DOM.getBoxModel",
+        "DOM.scrollIntoViewIfNeeded",
+        "DOM.removeNode",
+        "DOM.setNodeValue",
+        "DOM.setFileInputFiles",
         // Input
-        'Input.dispatchMouseEvent',
-        'Input.dispatchKeyEvent',
-        'Input.insertText',
+        "Input.dispatchMouseEvent",
+        "Input.dispatchKeyEvent",
+        "Input.insertText",
         // Network
-        'Network.enable',
-        'Network.disable',
-        'Network.setCacheDisabled',
-        'Network.setExtraHTTPHeaders',
-        'Network.setCookie',
-        'Network.setCookies',
-        'Network.getCookies',
-        'Network.deleteCookies',
-        'Network.clearBrowserCookies',
-        'Network.setUserAgentOverride',
+        "Network.enable",
+        "Network.disable",
+        "Network.setCacheDisabled",
+        "Network.setExtraHTTPHeaders",
+        "Network.setCookie",
+        "Network.setCookies",
+        "Network.getCookies",
+        "Network.deleteCookies",
+        "Network.clearBrowserCookies",
+        "Network.setUserAgentOverride",
         // Fetch (Request Interception)
-        'Fetch.enable',
-        'Fetch.disable',
-        'Fetch.continueRequest',
-        'Fetch.fulfillRequest',
-        'Fetch.failRequest',
-        'Fetch.getResponseBody',
+        "Fetch.enable",
+        "Fetch.disable",
+        "Fetch.continueRequest",
+        "Fetch.fulfillRequest",
+        "Fetch.failRequest",
+        "Fetch.getResponseBody",
         // Emulation
-        'Emulation.setDeviceMetricsOverride',
-        'Emulation.clearDeviceMetricsOverride',
-        'Emulation.setUserAgentOverride',
-        'Emulation.setGeolocationOverride',
-        'Emulation.clearGeolocationOverride',
-        'Emulation.setTimezoneOverride',
-        'Emulation.setTouchEmulationEnabled',
-        'Emulation.setEmulatedMedia',
-        'Emulation.setDefaultBackgroundColorOverride',
+        "Emulation.setDeviceMetricsOverride",
+        "Emulation.clearDeviceMetricsOverride",
+        "Emulation.setUserAgentOverride",
+        "Emulation.setGeolocationOverride",
+        "Emulation.clearGeolocationOverride",
+        "Emulation.setTimezoneOverride",
+        "Emulation.setTouchEmulationEnabled",
+        "Emulation.setEmulatedMedia",
+        "Emulation.setDefaultBackgroundColorOverride",
       ],
     });
   }
 
   // Verify secret from query param
   const url = new URL(c.req.url);
-  const providedSecret = url.searchParams.get('secret');
+  const providedSecret = url.searchParams.get("secret");
   const expectedSecret = c.env.CDP_SECRET;
 
   if (!expectedSecret) {
     return c.json(
       {
-        error: 'CDP endpoint not configured',
-        hint: 'Set CDP_SECRET via: wrangler secret put CDP_SECRET',
+        error: "CDP endpoint not configured",
+        hint: "Set CDP_SECRET via: wrangler secret put CDP_SECRET",
       },
       503,
     );
   }
 
   if (!providedSecret || !timingSafeEqual(providedSecret, expectedSecret)) {
-    return c.json({ error: 'Unauthorized' }, 401);
+    return c.json({ error: "Unauthorized" }, 401);
   }
 
   if (!c.env.BROWSER) {
     return c.json(
       {
-        error: 'Browser Rendering not configured',
-        hint: 'Add browser binding to wrangler.jsonc',
+        error: "Browser Rendering not configured",
+        hint: "Add browser binding to wrangler.jsonc",
       },
       503,
     );
@@ -190,8 +190,8 @@ cdp.get('/', async (c) => {
 
   // Initialize CDP session asynchronously
   initCDPSession(server, c.env).catch((err) => {
-    console.error('[CDP] Failed to initialize session:', err);
-    server.close(1011, 'Failed to initialize browser session');
+    console.error("[CDP] Failed to initialize session:", err);
+    server.close(1011, "Failed to initialize browser session");
   });
 
   return new Response(null, {
@@ -206,46 +206,46 @@ cdp.get('/', async (c) => {
  * Returns browser version info and WebSocket URL for OpenClaw/Playwright compatibility.
  * Authentication: Pass secret as query param `?secret=<CDP_SECRET>`
  */
-cdp.get('/json/version', async (c) => {
+cdp.get("/json/version", async (c) => {
   // Verify secret from query param
   const url = new URL(c.req.url);
-  const providedSecret = url.searchParams.get('secret');
+  const providedSecret = url.searchParams.get("secret");
   const expectedSecret = c.env.CDP_SECRET;
 
   if (!expectedSecret) {
     return c.json(
       {
-        error: 'CDP endpoint not configured',
-        hint: 'Set CDP_SECRET via: wrangler secret put CDP_SECRET',
+        error: "CDP endpoint not configured",
+        hint: "Set CDP_SECRET via: wrangler secret put CDP_SECRET",
       },
       503,
     );
   }
 
   if (!providedSecret || !timingSafeEqual(providedSecret, expectedSecret)) {
-    return c.json({ error: 'Unauthorized' }, 401);
+    return c.json({ error: "Unauthorized" }, 401);
   }
 
   if (!c.env.BROWSER) {
     return c.json(
       {
-        error: 'Browser Rendering not configured',
-        hint: 'Add browser binding to wrangler.jsonc',
+        error: "Browser Rendering not configured",
+        hint: "Add browser binding to wrangler.jsonc",
       },
       503,
     );
   }
 
   // Build the WebSocket URL - preserve the secret in the WS URL
-  const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsProtocol = url.protocol === "https:" ? "wss:" : "ws:";
   const wsUrl = `${wsProtocol}//${url.host}/cdp?secret=${encodeURIComponent(providedSecret)}`;
 
   return c.json({
-    Browser: 'Cloudflare-Browser-Rendering/1.0',
-    'Protocol-Version': '1.3',
-    'User-Agent': 'Mozilla/5.0 Cloudflare Browser Rendering',
-    'V8-Version': 'cloudflare',
-    'WebKit-Version': 'cloudflare',
+    Browser: "Cloudflare-Browser-Rendering/1.0",
+    "Protocol-Version": "1.3",
+    "User-Agent": "Mozilla/5.0 Cloudflare Browser Rendering",
+    "V8-Version": "cloudflare",
+    "WebKit-Version": "cloudflare",
     webSocketDebuggerUrl: wsUrl,
   });
 });
@@ -258,49 +258,49 @@ cdp.get('/json/version', async (c) => {
  * a placeholder target that will be created when connecting.
  * Authentication: Pass secret as query param `?secret=<CDP_SECRET>`
  */
-cdp.get('/json/list', async (c) => {
+cdp.get("/json/list", async (c) => {
   // Verify secret from query param
   const url = new URL(c.req.url);
-  const providedSecret = url.searchParams.get('secret');
+  const providedSecret = url.searchParams.get("secret");
   const expectedSecret = c.env.CDP_SECRET;
 
   if (!expectedSecret) {
     return c.json(
       {
-        error: 'CDP endpoint not configured',
-        hint: 'Set CDP_SECRET via: wrangler secret put CDP_SECRET',
+        error: "CDP endpoint not configured",
+        hint: "Set CDP_SECRET via: wrangler secret put CDP_SECRET",
       },
       503,
     );
   }
 
   if (!providedSecret || !timingSafeEqual(providedSecret, expectedSecret)) {
-    return c.json({ error: 'Unauthorized' }, 401);
+    return c.json({ error: "Unauthorized" }, 401);
   }
 
   if (!c.env.BROWSER) {
     return c.json(
       {
-        error: 'Browser Rendering not configured',
-        hint: 'Add browser binding to wrangler.jsonc',
+        error: "Browser Rendering not configured",
+        hint: "Add browser binding to wrangler.jsonc",
       },
       503,
     );
   }
 
   // Build the WebSocket URL
-  const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsProtocol = url.protocol === "https:" ? "wss:" : "ws:";
   const wsUrl = `${wsProtocol}//${url.host}/cdp?secret=${encodeURIComponent(providedSecret)}`;
 
   // Return a placeholder target - actual target is created on WS connect
   return c.json([
     {
-      description: '',
-      devtoolsFrontendUrl: '',
-      id: 'cloudflare-browser',
-      title: 'Cloudflare Browser Rendering',
-      type: 'page',
-      url: 'about:blank',
+      description: "",
+      devtoolsFrontendUrl: "",
+      id: "cloudflare-browser",
+      title: "Cloudflare Browser Rendering",
+      type: "page",
+      url: "about:blank",
       webSocketDebuggerUrl: wsUrl,
     },
   ]);
@@ -309,51 +309,51 @@ cdp.get('/json/list', async (c) => {
 /**
  * GET /json - Alias for /json/list (some clients use this)
  */
-cdp.get('/json', async (c) => {
+cdp.get("/json", async (c) => {
   // Redirect internally to /json/list handler
   const url = new URL(c.req.url);
-  url.pathname = url.pathname.replace(/\/json\/?$/, '/json/list');
+  url.pathname = url.pathname.replace(/\/json\/?$/, "/json/list");
 
   // Verify secret from query param
-  const providedSecret = url.searchParams.get('secret');
+  const providedSecret = url.searchParams.get("secret");
   const expectedSecret = c.env.CDP_SECRET;
 
   if (!expectedSecret) {
     return c.json(
       {
-        error: 'CDP endpoint not configured',
-        hint: 'Set CDP_SECRET via: wrangler secret put CDP_SECRET',
+        error: "CDP endpoint not configured",
+        hint: "Set CDP_SECRET via: wrangler secret put CDP_SECRET",
       },
       503,
     );
   }
 
   if (!providedSecret || !timingSafeEqual(providedSecret, expectedSecret)) {
-    return c.json({ error: 'Unauthorized' }, 401);
+    return c.json({ error: "Unauthorized" }, 401);
   }
 
   if (!c.env.BROWSER) {
     return c.json(
       {
-        error: 'Browser Rendering not configured',
-        hint: 'Add browser binding to wrangler.jsonc',
+        error: "Browser Rendering not configured",
+        hint: "Add browser binding to wrangler.jsonc",
       },
       503,
     );
   }
 
   // Build the WebSocket URL
-  const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsProtocol = url.protocol === "https:" ? "wss:" : "ws:";
   const wsUrl = `${wsProtocol}//${url.host}/cdp?secret=${encodeURIComponent(providedSecret)}`;
 
   return c.json([
     {
-      description: '',
-      devtoolsFrontendUrl: '',
-      id: 'cloudflare-browser',
-      title: 'Cloudflare Browser Rendering',
-      type: 'page',
-      url: 'about:blank',
+      description: "",
+      devtoolsFrontendUrl: "",
+      id: "cloudflare-browser",
+      title: "Cloudflare Browser Rendering",
+      type: "page",
+      url: "about:blank",
       webSocketDebuggerUrl: wsUrl,
     },
   ]);
@@ -387,60 +387,60 @@ async function initCDPSession(ws: WebSocket, env: OpenClawEnv): Promise<void> {
     };
 
     // Send initial target created event
-    sendEvent(ws, 'Target.targetCreated', {
+    sendEvent(ws, "Target.targetCreated", {
       targetInfo: {
         targetId,
-        type: 'page',
-        title: '',
-        url: 'about:blank',
+        type: "page",
+        title: "",
+        url: "about:blank",
         attached: true,
       },
     });
 
-    console.log('[CDP] Session initialized, targetId:', targetId);
+    console.log("[CDP] Session initialized, targetId:", targetId);
   } catch (err) {
-    console.error('[CDP] Browser launch failed:', err);
-    ws.close(1011, 'Browser launch failed');
+    console.error("[CDP] Browser launch failed:", err);
+    ws.close(1011, "Browser launch failed");
     return;
   }
 
   // Handle incoming messages
-  ws.addEventListener('message', async (event) => {
+  ws.addEventListener("message", async (event) => {
     if (!session) return;
 
     let request: CDPRequest;
     try {
       request = JSON.parse(event.data as string);
     } catch {
-      console.error('[CDP] Invalid JSON received');
+      console.error("[CDP] Invalid JSON received");
       return;
     }
 
-    console.log('[CDP] Request:', request.method, request.params);
+    console.log("[CDP] Request:", request.method, request.params);
 
     try {
       const result = await handleCDPMethod(session, request.method, request.params || {}, ws);
       sendResponse(ws, request.id, result);
     } catch (err) {
-      console.error('[CDP] Method error:', request.method, err);
-      sendError(ws, request.id, -32000, err instanceof Error ? err.message : 'Unknown error');
+      console.error("[CDP] Method error:", request.method, err);
+      sendError(ws, request.id, -32000, err instanceof Error ? err.message : "Unknown error");
     }
   });
 
   // Handle close
-  ws.addEventListener('close', async () => {
-    console.log('[CDP] WebSocket closed, cleaning up');
+  ws.addEventListener("close", async () => {
+    console.log("[CDP] WebSocket closed, cleaning up");
     if (session) {
       try {
         await session.browser.close();
       } catch (err) {
-        console.error('[CDP] Error closing browser:', err);
+        console.error("[CDP] Error closing browser:", err);
       }
     }
   });
 
-  ws.addEventListener('error', (event) => {
-    console.error('[CDP] WebSocket error:', event);
+  ws.addEventListener("error", (event) => {
+    console.error("[CDP] WebSocket error:", event);
   });
 }
 
@@ -453,43 +453,43 @@ async function handleCDPMethod(
   params: Record<string, unknown>,
   ws: WebSocket,
 ): Promise<unknown> {
-  const [domain, command] = method.split('.');
+  const [domain, command] = method.split(".");
 
   // Get the current page (use targetId from params or default)
   const targetId = (params.targetId as string) || session.defaultTargetId;
   const page = session.pages.get(targetId);
 
   switch (domain) {
-    case 'Browser':
+    case "Browser":
       return handleBrowser(session, command, params);
 
-    case 'Target':
+    case "Target":
       return handleTarget(session, command, params, ws);
 
-    case 'Page':
+    case "Page":
       if (!page) throw new Error(`Target not found: ${targetId}`);
       return handlePage(session, page, command, params, ws);
 
-    case 'Runtime':
+    case "Runtime":
       if (!page) throw new Error(`Target not found: ${targetId}`);
       return handleRuntime(session, page, command, params);
 
-    case 'DOM':
+    case "DOM":
       if (!page) throw new Error(`Target not found: ${targetId}`);
       return handleDOM(session, page, command, params);
 
-    case 'Input':
+    case "Input":
       if (!page) throw new Error(`Target not found: ${targetId}`);
       return handleInput(page, command, params);
 
-    case 'Network':
+    case "Network":
       return handleNetwork(session, page, command, params);
 
-    case 'Emulation':
+    case "Emulation":
       if (!page) throw new Error(`Target not found: ${targetId}`);
       return handleEmulation(page, command, params);
 
-    case 'Fetch':
+    case "Fetch":
       if (!page) throw new Error(`Target not found: ${targetId}`);
       return handleFetch(session, page, command, params, ws);
 
@@ -507,16 +507,16 @@ async function handleBrowser(
   _params: Record<string, unknown>,
 ): Promise<unknown> {
   switch (command) {
-    case 'getVersion':
+    case "getVersion":
       return {
-        protocolVersion: '1.3',
-        product: 'Cloudflare-Browser-Rendering',
-        revision: 'cloudflare',
-        userAgent: 'Mozilla/5.0 Cloudflare Browser Rendering',
-        jsVersion: 'V8',
+        protocolVersion: "1.3",
+        product: "Cloudflare-Browser-Rendering",
+        revision: "cloudflare",
+        userAgent: "Mozilla/5.0 Cloudflare Browser Rendering",
+        jsVersion: "V8",
       };
 
-    case 'close':
+    case "close":
       await session.browser.close();
       return {};
 
@@ -535,21 +535,21 @@ async function handleTarget(
   ws: WebSocket,
 ): Promise<unknown> {
   switch (command) {
-    case 'createTarget': {
-      const url = (params.url as string) || 'about:blank';
+    case "createTarget": {
+      const url = (params.url as string) || "about:blank";
       const page = await session.browser.newPage();
       const targetId = crypto.randomUUID();
 
       session.pages.set(targetId, page);
 
-      if (url !== 'about:blank') {
+      if (url !== "about:blank") {
         await page.goto(url);
       }
 
-      sendEvent(ws, 'Target.targetCreated', {
+      sendEvent(ws, "Target.targetCreated", {
         targetInfo: {
           targetId,
-          type: 'page',
+          type: "page",
           title: await page.title(),
           url: page.url(),
           attached: true,
@@ -559,7 +559,7 @@ async function handleTarget(
       return { targetId };
     }
 
-    case 'closeTarget': {
+    case "closeTarget": {
       const targetId = params.targetId as string;
       const page = session.pages.get(targetId);
 
@@ -570,17 +570,17 @@ async function handleTarget(
       await page.close();
       session.pages.delete(targetId);
 
-      sendEvent(ws, 'Target.targetDestroyed', { targetId });
+      sendEvent(ws, "Target.targetDestroyed", { targetId });
 
       return { success: true };
     }
 
-    case 'getTargets': {
+    case "getTargets": {
       const targets = [];
       for (const [targetId, page] of session.pages) {
         targets.push({
           targetId,
-          type: 'page',
+          type: "page",
           // eslint-disable-next-line no-await-in-loop -- sequential page info retrieval
           title: await page.title(),
           url: page.url(),
@@ -590,7 +590,7 @@ async function handleTarget(
       return { targetInfos: targets };
     }
 
-    case 'attachToTarget':
+    case "attachToTarget":
       // Already attached
       return { sessionId: params.targetId };
 
@@ -610,65 +610,65 @@ async function handlePage(
   ws: WebSocket,
 ): Promise<unknown> {
   switch (command) {
-    case 'navigate': {
+    case "navigate": {
       const url = params.url as string;
-      if (!url) throw new Error('url is required');
+      if (!url) throw new Error("url is required");
 
       const response = await page.goto(url, {
-        waitUntil: 'load',
+        waitUntil: "load",
       });
 
-      sendEvent(ws, 'Page.frameNavigated', {
+      sendEvent(ws, "Page.frameNavigated", {
         frame: {
           id: session.defaultTargetId,
           url: page.url(),
           securityOrigin: new URL(page.url()).origin,
-          mimeType: 'text/html',
+          mimeType: "text/html",
         },
       });
 
-      sendEvent(ws, 'Page.loadEventFired', {
+      sendEvent(ws, "Page.loadEventFired", {
         timestamp: Date.now() / 1000,
       });
 
       return {
         frameId: session.defaultTargetId,
         loaderId: crypto.randomUUID(),
-        errorText: response?.ok() ? undefined : 'Navigation failed',
+        errorText: response?.ok() ? undefined : "Navigation failed",
       };
     }
 
-    case 'reload': {
+    case "reload": {
       await page.reload();
       return {};
     }
 
-    case 'getFrameTree': {
+    case "getFrameTree": {
       return {
         frameTree: {
           frame: {
             id: session.defaultTargetId,
             loaderId: crypto.randomUUID(),
             url: page.url(),
-            securityOrigin: page.url() ? new URL(page.url()).origin : '',
-            mimeType: 'text/html',
+            securityOrigin: page.url() ? new URL(page.url()).origin : "",
+            mimeType: "text/html",
           },
           childFrames: [],
         },
       };
     }
 
-    case 'captureScreenshot': {
-      const format = (params.format as string) || 'png';
+    case "captureScreenshot": {
+      const format = (params.format as string) || "png";
       const quality = params.quality as number | undefined;
       const clip = params.clip as
         | { x: number; y: number; width: number; height: number }
         | undefined;
 
       const data = await page.screenshot({
-        type: format as 'png' | 'jpeg' | 'webp',
-        encoding: 'base64',
-        quality: format === 'jpeg' ? quality : undefined,
+        type: format as "png" | "jpeg" | "webp",
+        encoding: "base64",
+        quality: format === "jpeg" ? quality : undefined,
         clip: clip,
         fullPage: params.fullPage as boolean | undefined,
       });
@@ -676,7 +676,7 @@ async function handlePage(
       return { data };
     }
 
-    case 'getLayoutMetrics': {
+    case "getLayoutMetrics": {
       const metrics = await page.evaluate(() => ({
         width: document.documentElement.scrollWidth,
         height: document.documentElement.scrollHeight,
@@ -709,24 +709,24 @@ async function handlePage(
       };
     }
 
-    case 'bringToFront':
+    case "bringToFront":
       await page.bringToFront();
       return {};
 
-    case 'setContent': {
+    case "setContent": {
       const html = params.html as string;
-      if (!html) throw new Error('html is required');
+      if (!html) throw new Error("html is required");
 
       await page.setContent(html, {
         waitUntil:
-          (params.waitUntil as 'load' | 'domcontentloaded' | 'networkidle0' | 'networkidle2') ||
-          'load',
+          (params.waitUntil as "load" | "domcontentloaded" | "networkidle0" | "networkidle2") ||
+          "load",
       });
 
       return {};
     }
 
-    case 'printToPDF': {
+    case "printToPDF": {
       const options: Parameters<typeof page.pdf>[0] = {};
 
       if (params.landscape) options.landscape = params.landscape as boolean;
@@ -749,14 +749,14 @@ async function handlePage(
 
       const buffer = await page.pdf(options);
       // Convert to base64
-      const data = typeof buffer === 'string' ? buffer : Buffer.from(buffer).toString('base64');
+      const data = typeof buffer === "string" ? buffer : Buffer.from(buffer).toString("base64");
 
       return { data };
     }
 
-    case 'addScriptToEvaluateOnNewDocument': {
+    case "addScriptToEvaluateOnNewDocument": {
       const source = params.source as string;
-      if (!source) throw new Error('source is required');
+      if (!source) throw new Error("source is required");
 
       const identifier = crypto.randomUUID();
       session.scriptsToEvaluateOnNewDocument.set(identifier, source);
@@ -767,19 +767,19 @@ async function handlePage(
       return { identifier };
     }
 
-    case 'removeScriptToEvaluateOnNewDocument': {
+    case "removeScriptToEvaluateOnNewDocument": {
       const identifier = params.identifier as string;
       session.scriptsToEvaluateOnNewDocument.delete(identifier);
       // Note: Can't actually remove already-added scripts in Puppeteer
       return {};
     }
 
-    case 'handleJavaScriptDialog': {
+    case "handleJavaScriptDialog": {
       const accept = params.accept as boolean;
       const promptText = params.promptText as string | undefined;
 
       // Puppeteer auto-handles dialogs, but we can configure the page
-      page.on('dialog', async (dialog) => {
+      page.on("dialog", async (dialog) => {
         if (accept) {
           await dialog.accept(promptText);
         } else {
@@ -790,12 +790,12 @@ async function handlePage(
       return {};
     }
 
-    case 'stopLoading': {
+    case "stopLoading": {
       await page.evaluate(() => window.stop());
       return {};
     }
 
-    case 'getNavigationHistory': {
+    case "getNavigationHistory": {
       const history = await page.evaluate(() => ({
         currentIndex: window.history.length - 1,
         entries: [
@@ -804,7 +804,7 @@ async function handlePage(
             url: window.location.href,
             userTypedURL: window.location.href,
             title: document.title,
-            transitionType: 'typed',
+            transitionType: "typed",
           },
         ],
       }));
@@ -812,7 +812,7 @@ async function handlePage(
       return history;
     }
 
-    case 'navigateToHistoryEntry': {
+    case "navigateToHistoryEntry": {
       const entryId = params.entryId as number;
       // Simple implementation - just go back/forward
       await page.evaluate((id: number) => {
@@ -823,14 +823,14 @@ async function handlePage(
       return {};
     }
 
-    case 'setBypassCSP': {
+    case "setBypassCSP": {
       const enabled = params.enabled as boolean;
       await page.setBypassCSP(enabled);
       return {};
     }
 
-    case 'enable':
-    case 'disable':
+    case "enable":
+    case "disable":
       // No-op, events always enabled
       return {};
 
@@ -849,9 +849,9 @@ async function handleRuntime(
   params: Record<string, unknown>,
 ): Promise<unknown> {
   switch (command) {
-    case 'evaluate': {
+    case "evaluate": {
       const expression = params.expression as string;
-      if (!expression) throw new Error('expression is required');
+      if (!expression) throw new Error("expression is required");
 
       const returnByValue = params.returnByValue ?? true;
       const awaitPromise = params.awaitPromise ?? false;
@@ -866,7 +866,7 @@ async function handleRuntime(
 
         // Store object reference if not returning by value
         let objectId: string | undefined;
-        if (!returnByValue && result !== null && typeof result === 'object') {
+        if (!returnByValue && result !== null && typeof result === "object") {
           objectId = `obj-${session.objectIdCounter++}`;
           session.objectMap.set(objectId, result);
         }
@@ -874,7 +874,7 @@ async function handleRuntime(
         return {
           result: {
             type: typeof result,
-            subtype: Array.isArray(result) ? 'array' : result === null ? 'null' : undefined,
+            subtype: Array.isArray(result) ? "array" : result === null ? "null" : undefined,
             className: result?.constructor?.name,
             value: returnByValue ? result : undefined,
             objectId,
@@ -885,7 +885,7 @@ async function handleRuntime(
         return {
           exceptionDetails: {
             exceptionId: 1,
-            text: err instanceof Error ? err.message : 'Evaluation failed',
+            text: err instanceof Error ? err.message : "Evaluation failed",
             lineNumber: 0,
             columnNumber: 0,
           },
@@ -893,7 +893,7 @@ async function handleRuntime(
       }
     }
 
-    case 'callFunctionOn': {
+    case "callFunctionOn": {
       const functionDeclaration = params.functionDeclaration as string;
       const args = (params.arguments as Array<{ value?: unknown; objectId?: string }>) || [];
       const returnByValue = params.returnByValue ?? true;
@@ -911,7 +911,7 @@ async function handleRuntime(
         const result = await page.evaluate(fn as () => unknown, ...argValues);
 
         let objectId: string | undefined;
-        if (!returnByValue && result !== null && typeof result === 'object') {
+        if (!returnByValue && result !== null && typeof result === "object") {
           objectId = `obj-${session.objectIdCounter++}`;
           session.objectMap.set(objectId, result);
         }
@@ -919,7 +919,7 @@ async function handleRuntime(
         return {
           result: {
             type: typeof result,
-            subtype: Array.isArray(result) ? 'array' : result === null ? 'null' : undefined,
+            subtype: Array.isArray(result) ? "array" : result === null ? "null" : undefined,
             value: returnByValue ? result : undefined,
             objectId,
           },
@@ -928,7 +928,7 @@ async function handleRuntime(
         return {
           exceptionDetails: {
             exceptionId: 1,
-            text: err instanceof Error ? err.message : 'Call failed',
+            text: err instanceof Error ? err.message : "Call failed",
             lineNumber: 0,
             columnNumber: 0,
           },
@@ -936,12 +936,12 @@ async function handleRuntime(
       }
     }
 
-    case 'getProperties': {
+    case "getProperties": {
       const objectId = params.objectId as string;
       const ownProperties = params.ownProperties ?? true;
 
       const obj = session.objectMap.get(objectId);
-      if (!obj || typeof obj !== 'object') {
+      if (!obj || typeof obj !== "object") {
         return { result: [] };
       }
 
@@ -977,20 +977,20 @@ async function handleRuntime(
       return { result: properties };
     }
 
-    case 'releaseObject': {
+    case "releaseObject": {
       const objectId = params.objectId as string;
       session.objectMap.delete(objectId);
       return {};
     }
 
-    case 'releaseObjectGroup': {
+    case "releaseObjectGroup": {
       // Release all objects (simplified - we don't track groups)
       session.objectMap.clear();
       return {};
     }
 
-    case 'enable':
-    case 'disable':
+    case "enable":
+    case "disable":
       return {};
 
     default:
@@ -1020,7 +1020,7 @@ async function handleDOM(
   params: Record<string, unknown>,
 ): Promise<unknown> {
   switch (command) {
-    case 'getDocument': {
+    case "getDocument": {
       const depth = (params.depth as number) ?? 1;
 
       // Get basic document structure
@@ -1031,7 +1031,7 @@ async function handleDOM(
             nodeType: node.nodeType,
             nodeName: node.nodeName,
             localName: node.nodeName.toLowerCase(),
-            nodeValue: node.nodeValue || '',
+            nodeValue: node.nodeValue || "",
           };
 
           if (node instanceof Element) {
@@ -1059,16 +1059,16 @@ async function handleDOM(
 
       // Create a stable root nodeId
       const rootNodeId = session.nodeIdCounter++;
-      session.nodeMap.set(rootNodeId, 'html');
+      session.nodeMap.set(rootNodeId, "html");
 
       return {
         root: {
           nodeId: rootNodeId,
           backendNodeId: rootNodeId,
           nodeType: 9, // Document
-          nodeName: '#document',
-          localName: '',
-          nodeValue: '',
+          nodeName: "#document",
+          localName: "",
+          nodeValue: "",
           childNodeCount: 1,
           children: [doc],
           documentURL: page.url(),
@@ -1077,9 +1077,9 @@ async function handleDOM(
       };
     }
 
-    case 'querySelector': {
+    case "querySelector": {
       const selector = params.selector as string;
-      if (!selector) throw new Error('selector is required');
+      if (!selector) throw new Error("selector is required");
 
       const element = await page.$(selector);
       if (!element) {
@@ -1092,9 +1092,9 @@ async function handleDOM(
       return { nodeId };
     }
 
-    case 'querySelectorAll': {
+    case "querySelectorAll": {
       const selector = params.selector as string;
-      if (!selector) throw new Error('selector is required');
+      if (!selector) throw new Error("selector is required");
 
       const elements = await page.$$(selector);
       const nodeIds = elements.map((_, i) => {
@@ -1106,7 +1106,7 @@ async function handleDOM(
       return { nodeIds };
     }
 
-    case 'getOuterHTML': {
+    case "getOuterHTML": {
       const nodeId = params.nodeId as number;
       const selector = session.nodeMap.get(nodeId);
 
@@ -1118,13 +1118,13 @@ async function handleDOM(
 
       const html = await page.evaluate((sel: string) => {
         const el = document.querySelector(sel);
-        return el ? el.outerHTML : '';
+        return el ? el.outerHTML : "";
       }, selector);
 
       return { outerHTML: html };
     }
 
-    case 'getAttributes': {
+    case "getAttributes": {
       const nodeId = params.nodeId as number;
       const selector = session.nodeMap.get(nodeId);
 
@@ -1143,7 +1143,7 @@ async function handleDOM(
       return { attributes };
     }
 
-    case 'setAttributeValue': {
+    case "setAttributeValue": {
       const nodeId = params.nodeId as number;
       const name = params.name as string;
       const value = params.value as string;
@@ -1164,7 +1164,7 @@ async function handleDOM(
       return {};
     }
 
-    case 'focus': {
+    case "focus": {
       const nodeId = params.nodeId as number;
       const selector = session.nodeMap.get(nodeId);
 
@@ -1174,7 +1174,7 @@ async function handleDOM(
       return {};
     }
 
-    case 'getBoxModel': {
+    case "getBoxModel": {
       const nodeId = params.nodeId as number;
       const selector = session.nodeMap.get(nodeId);
 
@@ -1252,7 +1252,7 @@ async function handleDOM(
       };
     }
 
-    case 'scrollIntoViewIfNeeded': {
+    case "scrollIntoViewIfNeeded": {
       const nodeId = params.nodeId as number;
       const selector = session.nodeMap.get(nodeId);
 
@@ -1261,14 +1261,14 @@ async function handleDOM(
       await page.evaluate((sel: string) => {
         const el = document.querySelector(sel);
         if (el) {
-          el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });
+          el.scrollIntoView({ block: "center", inline: "center", behavior: "instant" });
         }
       }, selector);
 
       return {};
     }
 
-    case 'removeNode': {
+    case "removeNode": {
       const nodeId = params.nodeId as number;
       const selector = session.nodeMap.get(nodeId);
 
@@ -1276,7 +1276,7 @@ async function handleDOM(
 
       await page.evaluate((sel: string) => {
         const el = document.querySelector(sel);
-        if (el && el.parentNode) {
+        if (el?.parentNode) {
           el.parentNode.removeChild(el);
         }
       }, selector);
@@ -1285,7 +1285,7 @@ async function handleDOM(
       return {};
     }
 
-    case 'setNodeValue': {
+    case "setNodeValue": {
       const nodeId = params.nodeId as number;
       const value = params.value as string;
       const selector = session.nodeMap.get(nodeId);
@@ -1306,7 +1306,7 @@ async function handleDOM(
       return {};
     }
 
-    case 'setFileInputFiles': {
+    case "setFileInputFiles": {
       const nodeId = params.nodeId as number;
       const files = params.files as string[];
       const selector = session.nodeMap.get(nodeId);
@@ -1325,8 +1325,8 @@ async function handleDOM(
       return {};
     }
 
-    case 'enable':
-    case 'disable':
+    case "enable":
+    case "disable":
       return {};
 
     default:
@@ -1343,32 +1343,32 @@ async function handleInput(
   params: Record<string, unknown>,
 ): Promise<unknown> {
   switch (command) {
-    case 'dispatchMouseEvent': {
+    case "dispatchMouseEvent": {
       const type = params.type as string;
       const x = params.x as number;
       const y = params.y as number;
-      const button = (params.button as string) || 'left';
+      const button = (params.button as string) || "left";
       const clickCount = (params.clickCount as number) || 1;
 
       const mouse = page.mouse;
 
       switch (type) {
-        case 'mousePressed':
-          await mouse.down({ button: button as 'left' | 'right' | 'middle' });
+        case "mousePressed":
+          await mouse.down({ button: button as "left" | "right" | "middle" });
           break;
-        case 'mouseReleased':
-          await mouse.up({ button: button as 'left' | 'right' | 'middle' });
+        case "mouseReleased":
+          await mouse.up({ button: button as "left" | "right" | "middle" });
           break;
-        case 'mouseMoved':
+        case "mouseMoved":
           await mouse.move(x, y);
           break;
-        case 'mouseWheel':
+        case "mouseWheel":
           await mouse.wheel({ deltaX: params.deltaX as number, deltaY: params.deltaY as number });
           break;
         default:
           // For click, do move + down + up
           await mouse.click(x, y, {
-            button: button as 'left' | 'right' | 'middle',
+            button: button as "left" | "right" | "middle",
             clickCount,
           });
       }
@@ -1376,7 +1376,7 @@ async function handleInput(
       return {};
     }
 
-    case 'dispatchKeyEvent': {
+    case "dispatchKeyEvent": {
       const type = params.type as string;
       const key = params.key as string;
       const text = params.text as string;
@@ -1387,13 +1387,13 @@ async function handleInput(
       type KeyInput = Parameters<typeof keyboard.down>[0];
 
       switch (type) {
-        case 'keyDown':
+        case "keyDown":
           await keyboard.down(key as KeyInput);
           break;
-        case 'keyUp':
+        case "keyUp":
           await keyboard.up(key as KeyInput);
           break;
-        case 'char':
+        case "char":
           if (text) await keyboard.type(text);
           break;
         default:
@@ -1403,7 +1403,7 @@ async function handleInput(
       return {};
     }
 
-    case 'insertText': {
+    case "insertText": {
       const text = params.text as string;
       if (text) {
         await page.keyboard.type(text);
@@ -1426,19 +1426,19 @@ async function handleNetwork(
   params: Record<string, unknown>,
 ): Promise<unknown> {
   switch (command) {
-    case 'enable':
-    case 'disable':
+    case "enable":
+    case "disable":
       // Network events not fully supported, no-op
       return {};
 
-    case 'setCacheDisabled': {
+    case "setCacheDisabled": {
       if (page) {
         await page.setCacheEnabled(!(params.cacheDisabled as boolean));
       }
       return {};
     }
 
-    case 'setExtraHTTPHeaders': {
+    case "setExtraHTTPHeaders": {
       const headers = params.headers as Record<string, string>;
 
       // Store headers in session
@@ -1455,8 +1455,8 @@ async function handleNetwork(
       return {};
     }
 
-    case 'setCookie': {
-      if (!page) throw new Error('No page available');
+    case "setCookie": {
+      if (!page) throw new Error("No page available");
 
       const cookie = {
         name: params.name as string,
@@ -1466,7 +1466,7 @@ async function handleNetwork(
         path: params.path as string | undefined,
         secure: params.secure as boolean | undefined,
         httpOnly: params.httpOnly as boolean | undefined,
-        sameSite: params.sameSite as 'Strict' | 'Lax' | 'None' | undefined,
+        sameSite: params.sameSite as "Strict" | "Lax" | "None" | undefined,
         expires: params.expires as number | undefined,
       };
 
@@ -1475,8 +1475,8 @@ async function handleNetwork(
       return { success: true };
     }
 
-    case 'setCookies': {
-      if (!page) throw new Error('No page available');
+    case "setCookies": {
+      if (!page) throw new Error("No page available");
 
       const cookies = params.cookies as Array<{
         name: string;
@@ -1486,7 +1486,7 @@ async function handleNetwork(
         path?: string;
         secure?: boolean;
         httpOnly?: boolean;
-        sameSite?: 'Strict' | 'Lax' | 'None';
+        sameSite?: "Strict" | "Lax" | "None";
         expires?: number;
       }>;
 
@@ -1495,8 +1495,8 @@ async function handleNetwork(
       return {};
     }
 
-    case 'getCookies': {
-      if (!page) throw new Error('No page available');
+    case "getCookies": {
+      if (!page) throw new Error("No page available");
 
       const urls = params.urls as string[] | undefined;
       const cookies = await page.cookies(...(urls || []));
@@ -1517,8 +1517,8 @@ async function handleNetwork(
       };
     }
 
-    case 'deleteCookies': {
-      if (!page) throw new Error('No page available');
+    case "deleteCookies": {
+      if (!page) throw new Error("No page available");
 
       const name = params.name as string;
       const url = params.url as string | undefined;
@@ -1535,8 +1535,8 @@ async function handleNetwork(
       return {};
     }
 
-    case 'clearBrowserCookies': {
-      if (!page) throw new Error('No page available');
+    case "clearBrowserCookies": {
+      if (!page) throw new Error("No page available");
 
       // Get all cookies and delete them
       const cookies = await page.cookies();
@@ -1548,8 +1548,8 @@ async function handleNetwork(
       return {};
     }
 
-    case 'setUserAgentOverride': {
-      if (!page) throw new Error('No page available');
+    case "setUserAgentOverride": {
+      if (!page) throw new Error("No page available");
 
       const userAgent = params.userAgent as string;
       await page.setUserAgent(userAgent);
@@ -1571,7 +1571,7 @@ async function handleEmulation(
   params: Record<string, unknown>,
 ): Promise<unknown> {
   switch (command) {
-    case 'setDeviceMetricsOverride': {
+    case "setDeviceMetricsOverride": {
       const width = params.width as number;
       const height = params.height as number;
       const deviceScaleFactor = (params.deviceScaleFactor as number) || 1;
@@ -1587,18 +1587,18 @@ async function handleEmulation(
       return {};
     }
 
-    case 'setUserAgentOverride': {
+    case "setUserAgentOverride": {
       const userAgent = params.userAgent as string;
       await page.setUserAgent(userAgent);
       return {};
     }
 
-    case 'clearDeviceMetricsOverride':
+    case "clearDeviceMetricsOverride":
       // Reset to default
       await page.setViewport({ width: 1280, height: 720 });
       return {};
 
-    case 'setGeolocationOverride': {
+    case "setGeolocationOverride": {
       const latitude = params.latitude as number | undefined;
       const longitude = params.longitude as number | undefined;
       const accuracy = params.accuracy as number | undefined;
@@ -1614,12 +1614,12 @@ async function handleEmulation(
       return {};
     }
 
-    case 'clearGeolocationOverride': {
+    case "clearGeolocationOverride": {
       // Can't truly clear, but we can set to a default
       return {};
     }
 
-    case 'setTimezoneOverride': {
+    case "setTimezoneOverride": {
       const timezoneId = params.timezoneId as string;
 
       // Puppeteer doesn't have direct timezone override, but we can emulate via evaluate
@@ -1629,7 +1629,7 @@ async function handleEmulation(
 
         // eslint-disable-next-line no-extend-native -- CDP emulation requires prototype override
         Date.prototype.toString = function () {
-          return originalToLocaleString.call(this, 'en-US', { timeZone: tz });
+          return originalToLocaleString.call(this, "en-US", { timeZone: tz });
         };
 
         // Store timezone for scripts that check it
@@ -1639,14 +1639,14 @@ async function handleEmulation(
       return {};
     }
 
-    case 'setTouchEmulationEnabled': {
+    case "setTouchEmulationEnabled": {
       const enabled = params.enabled as boolean;
 
       // Puppeteer handles this via viewport isMobile, but we can also inject touch events
       if (enabled) {
         await page.evaluateOnNewDocument(() => {
           // Make the browser think it supports touch
-          Object.defineProperty(navigator, 'maxTouchPoints', {
+          Object.defineProperty(navigator, "maxTouchPoints", {
             get: () => 1,
           });
 
@@ -1659,12 +1659,12 @@ async function handleEmulation(
       return {};
     }
 
-    case 'setEmulatedMedia': {
+    case "setEmulatedMedia": {
       const media = params.media as string | undefined;
       const features = params.features as Array<{ name: string; value: string }> | undefined;
 
       if (media) {
-        await page.emulateMediaType(media as 'screen' | 'print');
+        await page.emulateMediaType(media as "screen" | "print");
       }
 
       if (features) {
@@ -1674,7 +1674,7 @@ async function handleEmulation(
       return {};
     }
 
-    case 'setDefaultBackgroundColorOverride': {
+    case "setDefaultBackgroundColorOverride": {
       const color = params.color as { r: number; g: number; b: number; a?: number } | undefined;
 
       if (color) {
@@ -1703,7 +1703,7 @@ async function handleFetch(
   ws: WebSocket,
 ): Promise<unknown> {
   switch (command) {
-    case 'enable': {
+    case "enable": {
       const patterns = params.patterns as
         | Array<{ urlPattern?: string; requestStage?: string }>
         | undefined;
@@ -1713,7 +1713,7 @@ async function handleFetch(
       // Set up request interception
       await page.setRequestInterception(true);
 
-      page.on('request', async (request) => {
+      page.on("request", async (request) => {
         if (!session.requestInterceptionEnabled) {
           await request.continue();
           return;
@@ -1740,7 +1740,7 @@ async function handleFetch(
           });
 
           // Send Fetch.requestPaused event
-          sendEvent(ws, 'Fetch.requestPaused', {
+          sendEvent(ws, "Fetch.requestPaused", {
             requestId,
             request: {
               url: request.url(),
@@ -1759,13 +1759,13 @@ async function handleFetch(
       return {};
     }
 
-    case 'disable': {
+    case "disable": {
       session.requestInterceptionEnabled = false;
       await page.setRequestInterception(false);
       return {};
     }
 
-    case 'continueRequest': {
+    case "continueRequest": {
       const requestId = params.requestId as string;
       const url = params.url as string | undefined;
       const method = params.method as string | undefined;
@@ -1801,7 +1801,7 @@ async function handleFetch(
       return {};
     }
 
-    case 'fulfillRequest': {
+    case "fulfillRequest": {
       const requestId = params.requestId as string;
       const responseCode = params.responseCode as number;
       const responseHeaders = params.responseHeaders as
@@ -1828,7 +1828,7 @@ async function handleFetch(
       await request.respond({
         status: responseCode,
         headers,
-        body: body ? Buffer.from(body, 'base64') : undefined,
+        body: body ? Buffer.from(body, "base64") : undefined,
       });
 
       session.pendingRequests.delete(requestId);
@@ -1836,7 +1836,7 @@ async function handleFetch(
       return {};
     }
 
-    case 'failRequest': {
+    case "failRequest": {
       const requestId = params.requestId as string;
       const errorReason = params.errorReason as string;
 
@@ -1848,17 +1848,17 @@ async function handleFetch(
       const request = pending.request as unknown as { abort: (reason?: string) => Promise<void> };
 
       // Map CDP error reasons to Puppeteer abort reasons
-      const abortReason = errorReason.toLowerCase().includes('access')
-        ? 'accessdenied'
-        : errorReason.toLowerCase().includes('address')
-          ? 'addressunreachable'
-          : errorReason.toLowerCase().includes('blocked')
-            ? 'blockedbyclient'
-            : errorReason.toLowerCase().includes('connection')
-              ? 'connectionfailed'
-              : errorReason.toLowerCase().includes('timeout')
-                ? 'timedout'
-                : 'failed';
+      const abortReason = errorReason.toLowerCase().includes("access")
+        ? "accessdenied"
+        : errorReason.toLowerCase().includes("address")
+          ? "addressunreachable"
+          : errorReason.toLowerCase().includes("blocked")
+            ? "blockedbyclient"
+            : errorReason.toLowerCase().includes("connection")
+              ? "connectionfailed"
+              : errorReason.toLowerCase().includes("timeout")
+                ? "timedout"
+                : "failed";
 
       await request.abort(abortReason);
       session.pendingRequests.delete(requestId);
@@ -1866,10 +1866,10 @@ async function handleFetch(
       return {};
     }
 
-    case 'getResponseBody': {
+    case "getResponseBody": {
       // This would need to store response bodies, which we're not currently doing
       // Return empty for now
-      return { body: '', base64Encoded: false };
+      return { body: "", base64Encoded: false };
     }
 
     default:

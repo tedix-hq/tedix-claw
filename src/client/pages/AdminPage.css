@@ -33,9 +33,9 @@
 
 /* Error banner */
 .error-banner {
-  background-color: rgba(239, 68, 68, 0.15);
-  border: 1px solid var(--error-color);
-  border-radius: var(--border-radius);
+  background-color: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-radius: 12px;
   padding: 1rem;
   display: flex;
   justify-content: space-between;
@@ -60,9 +60,9 @@
 
 /* Warning banner (R2 not configured) */
 .warning-banner {
-  background-color: rgba(251, 191, 36, 0.15);
-  border: 1px solid var(--warning-color);
-  border-radius: var(--border-radius);
+  background-color: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  border-radius: 12px;
   padding: 1rem;
   color: var(--warning-color);
 }
@@ -87,9 +87,9 @@
 
 /* Success banner (R2 configured) */
 .success-banner {
-  background-color: rgba(74, 222, 128, 0.15);
-  border: 1px solid var(--success-color);
-  border-radius: var(--border-radius);
+  background-color: rgba(52, 211, 153, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  border-radius: 12px;
   padding: 1rem;
   color: var(--success-color);
   font-size: 0.875rem;
@@ -123,9 +123,9 @@
 /* Section styles */
 .devices-section {
   background-color: var(--surface-color);
-  border-radius: var(--border-radius);
+  border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
 }
 
 .section-header {
@@ -189,7 +189,7 @@
 .device-card {
   background-color: var(--bg-color);
   border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
+  border-radius: 12px;
   padding: 1rem;
   display: flex;
   flex-direction: column;
@@ -197,12 +197,11 @@
 }
 
 .device-card.pending {
-  border-color: var(--warning-color);
-  border-width: 2px;
+  border-color: rgba(251, 191, 36, 0.4);
 }
 
 .device-card.paired {
-  border-color: var(--success-color);
+  border-color: rgba(52, 211, 153, 0.3);
 }
 
 .device-header {
@@ -222,18 +221,18 @@
   font-size: 0.75rem;
   font-weight: 500;
   padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  border-radius: 6px;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
 .device-badge.pending {
-  background-color: rgba(251, 191, 36, 0.2);
+  background-color: rgba(251, 191, 36, 0.15);
   color: var(--warning-color);
 }
 
 .device-badge.paired {
-  background-color: rgba(74, 222, 128, 0.2);
+  background-color: rgba(52, 211, 153, 0.15);
   color: var(--success-color);
 }
 
@@ -270,7 +269,7 @@
 /* Buttons */
 .btn {
   padding: 0.5rem 1rem;
-  border-radius: var(--border-radius);
+  border-radius: 8px;
   font-weight: 500;
   font-size: 0.875rem;
   border: none;
@@ -349,7 +348,7 @@
 .provider-card {
   background-color: var(--bg-color);
   border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
+  border-radius: 12px;
   padding: 1rem;
   display: flex;
   justify-content: space-between;
@@ -378,7 +377,7 @@
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
   text-transform: uppercase;
-  background-color: rgba(96, 165, 250, 0.2);
+  background-color: rgba(242, 131, 34, 0.15);
   color: var(--primary-color);
 }
 
@@ -398,7 +397,7 @@
   flex: 1;
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
+  border-radius: 8px;
   background-color: var(--bg-color);
   color: var(--text-primary);
   font-family: monospace;
@@ -412,7 +411,7 @@
 .token-input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
+  box-shadow: 0 0 0 2px rgba(242, 131, 34, 0.2);
 }
 
 .token-form-hint {

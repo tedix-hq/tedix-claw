@@ -1,7 +1,7 @@
 // API client for admin endpoints
 // Authentication is handled by Cloudflare Access (JWT in cookies)
 
-const API_BASE = '/api/admin';
+const API_BASE = "/api/admin";
 
 export interface PendingDevice {
   requestId: string;
@@ -58,22 +58,22 @@ export interface ApproveAllResponse {
 export class AuthError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'AuthError';
+    this.name = "AuthError";
   }
 }
 
 async function apiRequest<T>(path: string, options: globalThis.RequestInit = {}): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
-    credentials: 'include',
+    credentials: "include",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...options.headers,
     },
   } as globalThis.RequestInit);
 
   if (response.status === 401) {
-    throw new AuthError('Unauthorized - please log in via Cloudflare Access');
+    throw new AuthError("Unauthorized - please log in via Cloudflare Access");
   }
 
   const data = (await response.json()) as T & { error?: string };
@@ -86,18 +86,18 @@ async function apiRequest<T>(path: string, options: globalThis.RequestInit = {})
 }
 
 export async function listDevices(): Promise<DeviceListResponse> {
-  return apiRequest<DeviceListResponse>('/devices');
+  return apiRequest<DeviceListResponse>("/devices");
 }
 
 export async function approveDevice(requestId: string): Promise<ApproveResponse> {
   return apiRequest<ApproveResponse>(`/devices/${requestId}/approve`, {
-    method: 'POST',
+    method: "POST",
   });
 }
 
 export async function approveAllDevices(): Promise<ApproveAllResponse> {
-  return apiRequest<ApproveAllResponse>('/devices/approve-all', {
-    method: 'POST',
+  return apiRequest<ApproveAllResponse>("/devices/approve-all", {
+    method: "POST",
   });
 }
 
@@ -108,8 +108,8 @@ export interface RestartGatewayResponse {
 }
 
 export async function restartGateway(): Promise<RestartGatewayResponse> {
-  return apiRequest<RestartGatewayResponse>('/gateway/restart', {
-    method: 'POST',
+  return apiRequest<RestartGatewayResponse>("/gateway/restart", {
+    method: "POST",
   });
 }
 
@@ -121,7 +121,7 @@ export interface StorageStatusResponse {
 }
 
 export async function getStorageStatus(): Promise<StorageStatusResponse> {
-  return apiRequest<StorageStatusResponse>('/storage');
+  return apiRequest<StorageStatusResponse>("/storage");
 }
 
 export interface SyncResponse {
@@ -133,8 +133,8 @@ export interface SyncResponse {
 }
 
 export async function triggerSync(): Promise<SyncResponse> {
-  return apiRequest<SyncResponse>('/storage/sync', {
-    method: 'POST',
+  return apiRequest<SyncResponse>("/storage/sync", {
+    method: "POST",
   });
 }
 
@@ -160,18 +160,18 @@ export interface SetupTokenResponse {
 }
 
 export async function getAuthProviders(): Promise<AuthProvidersResponse> {
-  return apiRequest<AuthProvidersResponse>('/auth/providers');
+  return apiRequest<AuthProvidersResponse>("/auth/providers");
 }
 
 export async function saveSetupToken(provider: string, token: string): Promise<SetupTokenResponse> {
-  return apiRequest<SetupTokenResponse>('/auth/setup-token', {
-    method: 'POST',
+  return apiRequest<SetupTokenResponse>("/auth/setup-token", {
+    method: "POST",
     body: JSON.stringify({ provider, token }),
   });
 }
 
 export async function removeAuthProvider(profileId: string): Promise<SetupTokenResponse> {
   return apiRequest<SetupTokenResponse>(`/auth/providers/${profileId}`, {
-    method: 'DELETE',
+    method: "DELETE",
   });
 }

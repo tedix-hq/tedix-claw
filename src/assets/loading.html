@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Loading - Tedix Claw</title>
+    <title>Loading - Tedix</title>
     <style>
       * {
         margin: 0;
@@ -17,10 +17,10 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        background: #111113;
         font-family:
           -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-        color: #e0e0e0;
+        color: #9ca3af;
         padding: 20px;
       }
 
@@ -52,12 +52,12 @@
         font-size: 1.5rem;
         font-weight: 500;
         margin-bottom: 16px;
-        color: #ffffff;
+        color: #f0f0f0;
       }
 
       .status {
         font-size: 0.9rem;
-        color: #a0a0a0;
+        color: #6b7280;
         margin-bottom: 30px;
       }
 
@@ -76,8 +76,8 @@
       .spinner {
         width: 24px;
         height: 24px;
-        border: 3px solid rgba(255, 255, 255, 0.1);
-        border-top-color: #60a5fa;
+        border: 3px solid rgba(242, 131, 34, 0.2);
+        border-top-color: #f28322;
         border-radius: 50%;
         animation: spin 1s linear infinite;
       }
@@ -116,7 +116,7 @@
 
       .info {
         font-size: 0.8rem;
-        color: #707070;
+        color: #6b7280;
         margin-top: 40px;
       }
 
@@ -130,17 +130,17 @@
       }
 
       .ready {
-        color: #4ade80;
+        color: #f28322;
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <img src="/logo.png" alt="Tedix Claw" class="logo" />
+      <img src="/logo.png" alt="Tedix" class="logo" />
 
       <div class="spinner-container">
         <div class="spinner"></div>
-        <h1 id="title">Waiting for Tedix Claw to load</h1>
+        <h1 id="title">Waiting for Tedix to load</h1>
       </div>
 
       <p class="status" id="status">Starting container...</p>
@@ -167,30 +167,30 @@
           consecutiveErrors = 0;
 
           if (data.ok && data.status === 'running') {
-            // Container is ready! Reload the page
-            titleEl.innerHTML = '<span class="ready">Tedix Claw is ready!</span>';
+            titleEl.textContent = '';
+            const readySpan = document.createElement('span');
+            readySpan.className = 'ready';
+            readySpan.textContent = 'Tedix is ready!';
+            titleEl.appendChild(readySpan);
             statusEl.textContent = 'Redirecting...';
             document.querySelector('.spinner').style.display = 'none';
 
-            // Small delay so user sees the "ready" message
             setTimeout(() => {
               window.location.reload();
             }, 500);
             return;
           }
 
-          // Update status message based on state
           if (data.status === 'not_running') {
             statusEl.textContent = 'Container is starting up...';
           } else if (data.status === 'not_responding') {
             statusEl.textContent = 'Container started, waiting for gateway...';
           } else {
-            statusEl.textContent = 'Checking status... (poll #' + pollCount + ')';
+            statusEl.textContent = `Checking status... (poll #${pollCount})`;
           }
 
-          // Continue polling
           setTimeout(checkStatus, 2000);
-        } catch (err) {
+        } catch (_err) {
           consecutiveErrors++;
 
           if (consecutiveErrors >= maxConsecutiveErrors) {
@@ -199,13 +199,12 @@
             statusEl.textContent = 'Connection lost';
           } else {
             statusEl.textContent =
-              'Retrying... (' + consecutiveErrors + '/' + maxConsecutiveErrors + ')';
+              `Retrying... (${consecutiveErrors}/${maxConsecutiveErrors})`;
             setTimeout(checkStatus, 3000);
           }
         }
       }
 
-      // Start polling after a brief delay
       setTimeout(checkStatus, 1000);
     </script>
   </body>

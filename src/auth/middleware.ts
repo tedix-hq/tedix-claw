@@ -1,13 +1,13 @@
-import type { Context, Next } from 'hono';
-import type { AppEnv, OpenClawEnv } from '../types';
-import { verifyAccessJWT } from './jwt';
+import type { Context, Next } from "hono";
+import type { AppEnv, OpenClawEnv } from "../types";
+import { verifyAccessJWT } from "./jwt";
 
 /**
  * Options for creating an access middleware
  */
 export interface AccessMiddlewareOptions {
   /** Response type: 'json' for API routes, 'html' for UI routes */
-  type: 'json' | 'html';
+  type: "json" | "html";
   /** Whether to redirect to login when JWT is missing (only for 'html' type) */
   redirectOnMissing?: boolean;
 }
@@ -16,26 +16,26 @@ export interface AccessMiddlewareOptions {
  * Check if running in development mode (skips CF Access auth + device pairing)
  */
 export function isDevMode(env: OpenClawEnv): boolean {
-  return env.DEV_MODE === 'true';
+  return env.DEV_MODE === "true";
 }
 
 /**
  * Check if running in E2E test mode (skips CF Access auth but keeps device pairing)
  */
 export function isE2ETestMode(env: OpenClawEnv): boolean {
-  return env.E2E_TEST_MODE === 'true';
+  return env.E2E_TEST_MODE === "true";
 }
 
 /**
  * Extract JWT from request headers or cookies
  */
 export function extractJWT(c: Context<AppEnv>): string | null {
-  const jwtHeader = c.req.header('CF-Access-JWT-Assertion');
+  const jwtHeader = c.req.header("CF-Access-JWT-Assertion");
   const jwtCookie = c.req.raw.headers
-    .get('Cookie')
-    ?.split(';')
-    .find((cookie) => cookie.trim().startsWith('CF_Authorization='))
-    ?.split('=')[1];
+    .get("Cookie")
+    ?.split(";")
+    .find((cookie) => cookie.trim().startsWith("CF_Authorization="))
+    ?.split("=")[1];
 
   return jwtHeader || jwtCookie || null;
 }
@@ -52,7 +52,7 @@ export function createAccessMiddleware(options: AccessMiddlewareOptions) {
   return async (c: Context<AppEnv>, next: Next) => {
     // Skip auth in dev mode or E2E test mode
     if (isDevMode(c.env) || isE2ETestMode(c.env)) {
-      c.set('accessUser', { email: 'dev@localhost', name: 'Dev User' });
+      c.set("accessUser", { email: "dev@localhost", name: "Dev User" });
       return next();
     }
 
@@ -61,11 +61,11 @@ export function createAccessMiddleware(options: AccessMiddlewareOptions) {
 
     // Check if CF Access is configured
     if (!teamDomain || !expectedAud) {
-      if (type === 'json') {
+      if (type === "json") {
         return c.json(
           {
-            error: 'Cloudflare Access not configured',
-            hint: 'Set CF_ACCESS_TEAM_DOMAIN and CF_ACCESS_AUD environment variables',
+            error: "Cloudflare Access not configured",
+            hint: "Set CF_ACCESS_TEAM_DOMAIN and CF_ACCESS_AUD environment variables",
           },
           500,
         );
@@ -88,15 +88,15 @@ export function createAccessMiddleware(options: AccessMiddlewareOptions) {
     const jwt = extractJWT(c);
 
     if (!jwt) {
-      if (type === 'html' && redirectOnMissing) {
+      if (type === "html" && redirectOnMissing) {
         return c.redirect(`https://${teamDomain}`, 302);
       }
 
-      if (type === 'json') {
+      if (type === "json") {
         return c.json(
           {
-            error: 'Unauthorized',
-            hint: 'Missing Cloudflare Access JWT. Ensure this route is protected by Cloudflare Access.',
+            error: "Unauthorized",
+            hint: "Missing Cloudflare Access JWT. Ensure this route is protected by Cloudflare Access.",
           },
           401,
         );
@@ -119,16 +119,16 @@ export function createAccessMiddleware(options: AccessMiddlewareOptions) {
     // Verify JWT
     try {
       const payload = await verifyAccessJWT(jwt, teamDomain, expectedAud);
-      c.set('accessUser', { email: payload.email, name: payload.name });
+      c.set("accessUser", { email: payload.email, name: payload.name });
       await next();
     } catch (err) {
-      console.error('Access JWT verification failed:', err);
+      console.error("Access JWT verification failed:", err);
 
-      if (type === 'json') {
+      if (type === "json") {
         return c.json(
           {
-            error: 'Unauthorized',
-            details: err instanceof Error ? err.message : 'JWT verification failed',
+            error: "Unauthorized",
+            details: err instanceof Error ? err.message : "JWT verification failed",
           },
           401,
         );
