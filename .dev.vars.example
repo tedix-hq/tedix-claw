@@ -18,9 +18,13 @@ DEV_MODE=true
 # Enable debug routes at /debug/*
 DEBUG_ROUTES=true
 
-# ─── Gateway auth ──────────────────────────────────────────────────
+# ─── Auth tokens ─────────────────────────────────────────────────
 # Fixed gateway token for dev (in prod, use wrangler secret put)
 OPENCLAW_GATEWAY_TOKEN=dev-token-change-in-prod
+
+# Setup token from 'claude setup-token' — persists across container restarts
+# so you don't need to re-enter it every time via the admin UI.
+# CLAUDE_SETUP_TOKEN=your-setup-token
 
 # ─── Cloudflare Access (production only) ───────────────────────────
 # CF_ACCESS_TEAM_DOMAIN=myteam.cloudflareaccess.com

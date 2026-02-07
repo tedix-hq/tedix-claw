@@ -461,7 +461,7 @@ OpenClaw in Cloudflare Sandbox uses multiple authentication layers:
 
 **Slow first request:** Cold starts take 1-2 minutes. Subsequent requests are faster.
 
-**R2 not mounting:** Check that all three R2 secrets are set (`R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `CF_ACCOUNT_ID`). Note: R2 mounting only works in production, not with `wrangler dev`.
+**R2 not mounting:** Check that all three R2 secrets are set (`R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `CF_ACCOUNT_ID`). Note: R2 mounting requires `wrangler dev --remote` — the default `start` script uses local mode, so add `--remote` if you need R2 during development. Local-only `wrangler dev` cannot mount R2 because FUSE is unavailable outside Cloudflare infra.
 
 **Access denied on admin routes:** Ensure `CF_ACCESS_TEAM_DOMAIN` and `CF_ACCESS_AUD` are set, and that your Cloudflare Access application is configured correctly.
 

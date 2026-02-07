@@ -60,6 +60,8 @@
     {
       "binding": "OPENCLAW_BUCKET",
       "bucket_name": "openclaw-data",
+      "preview_bucket_name": "openclaw-data-staging",
+      "remote": true,
     },
   ],
   // Cron trigger to sync openclaw data to R2 every 5 minutes

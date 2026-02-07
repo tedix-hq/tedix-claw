@@ -144,6 +144,12 @@ describe("buildEnvVars", () => {
     expect(result.CF_ACCOUNT_ID).toBe("acct-123");
   });
 
+  it("passes CLAUDE_SETUP_TOKEN to container", () => {
+    const env = createMockEnv({ CLAUDE_SETUP_TOKEN: "setup-tok-123" });
+    const result = buildEnvVars(env);
+    expect(result.CLAUDE_SETUP_TOKEN).toBe("setup-tok-123");
+  });
+
   it("combines all env vars correctly", () => {
     const env = createMockEnv({
       ANTHROPIC_API_KEY: "sk-key",

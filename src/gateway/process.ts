@@ -20,6 +20,7 @@ export async function findExistingGateway(sandbox: Sandbox): Promise<Process | n
         proc.command.includes("start-openclaw.sh") || proc.command.includes("openclaw gateway");
       const isCliCommand =
         proc.command.includes("openclaw devices") ||
+        proc.command.includes("openclaw pairing") ||
         proc.command.includes("openclaw --version") ||
         proc.command.includes("openclaw onboard");
 

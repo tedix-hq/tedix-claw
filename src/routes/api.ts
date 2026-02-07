@@ -208,6 +208,59 @@ adminApi.post("/devices/approve-all", async (c) => {
   }
 });
 
+// POST /api/admin/pairing/approve - Approve a channel pairing request (Telegram, Discord, etc.)
+adminApi.post("/pairing/approve", async (c) => {
+  const sandbox = c.get("sandbox");
+
+  let body: { channel?: string; code?: string };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ success: false, error: "Invalid JSON body" }, 400);
+  }
+
+  const channel = body.channel;
+  const code = body.code?.trim();
+
+  if (!channel || !/^[a-z]+$/.test(channel)) {
+    return c.json({ success: false, error: "Invalid channel (e.g. telegram, discord)" }, 400);
+  }
+  if (!code || !/^[A-Za-z0-9]+$/.test(code)) {
+    return c.json({ success: false, error: "Invalid pairing code format" }, 400);
+  }
+
+  try {
+    await ensureGateway(sandbox, c.env);
+
+    // openclaw pairing works directly with config files, no --url/--token needed
+    const proc = await sandbox.startProcess(
+      `openclaw pairing approve ${channel} ${code}`,
+    );
+    await waitForProcess(proc, CLI_TIMEOUT_MS);
+
+    const logs = await proc.getLogs();
+    const stdout = logs.stdout || "";
+    const stderr = logs.stderr || "";
+
+    const success =
+      stdout.toLowerCase().includes("approved") ||
+      stdout.toLowerCase().includes("paired") ||
+      proc.exitCode === 0;
+
+    return c.json({
+      success,
+      channel,
+      code,
+      message: success ? `${channel} pairing approved` : "Approval may have failed",
+      stdout,
+      stderr,
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return c.json({ success: false, error: errorMessage }, 500);
+  }
+});
+
 // GET /api/admin/storage - Get R2 storage status and last sync time
 adminApi.get("/storage", async (c) => {
   const sandbox = c.get("sandbox");

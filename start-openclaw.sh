@@ -8,8 +8,11 @@
 
 set -e
 
-if pgrep -f "openclaw gateway" > /dev/null 2>&1; then
-    echo "OpenClaw gateway is already running, exiting."
+# Only skip if a gateway process exists AND the port is actually listening.
+# pgrep alone is unreliable — zombie/dying processes cause false positives
+# after a restart, leading to no gateway running at all.
+if pgrep -f "openclaw gateway" > /dev/null 2>&1 && ss -tlnp 2>/dev/null | grep -q ':18789'; then
+    echo "OpenClaw gateway is already running on port 18789, exiting."
     exit 0
 fi
 
@@ -180,39 +183,43 @@ if (process.env.OPENCLAW_DEV_MODE === 'true') {
 if (process.env.CF_AI_GATEWAY_MODEL) {
     const raw = process.env.CF_AI_GATEWAY_MODEL;
     const slashIdx = raw.indexOf('/');
-    const gwProvider = raw.substring(0, slashIdx);
-    const modelId = raw.substring(slashIdx + 1);
-
-    const accountId = process.env.CF_AI_GATEWAY_ACCOUNT_ID;
-    const gatewayId = process.env.CF_AI_GATEWAY_GATEWAY_ID;
-    const apiKey = process.env.CLOUDFLARE_AI_GATEWAY_API_KEY;
-
-    let baseUrl;
-    if (accountId && gatewayId) {
-        baseUrl = 'https://gateway.ai.cloudflare.com/v1/' + accountId + '/' + gatewayId + '/' + gwProvider;
-        if (gwProvider === 'workers-ai') baseUrl += '/v1';
-    } else if (gwProvider === 'workers-ai' && process.env.CF_ACCOUNT_ID) {
-        baseUrl = 'https://api.cloudflare.com/client/v4/accounts/' + process.env.CF_ACCOUNT_ID + '/ai/v1';
-    }
-
-    if (baseUrl && apiKey) {
-        const api = gwProvider === 'anthropic' ? 'anthropic-messages' : 'openai-completions';
-        const providerName = 'cf-ai-gw-' + gwProvider;
-
-        config.models = config.models || {};
-        config.models.providers = config.models.providers || {};
-        config.models.providers[providerName] = {
-            baseUrl: baseUrl,
-            apiKey: apiKey,
-            api: api,
-            models: [{ id: modelId, name: modelId, contextWindow: 131072, maxTokens: 8192 }],
-        };
-        config.agents = config.agents || {};
-        config.agents.defaults = config.agents.defaults || {};
-        config.agents.defaults.model = { primary: providerName + '/' + modelId };
-        console.log('AI Gateway model override: provider=' + providerName + ' model=' + modelId + ' via ' + baseUrl);
+    if (slashIdx <= 0) {
+        console.warn('CF_AI_GATEWAY_MODEL must be in provider/model-id format (e.g. "anthropic/claude-sonnet-4-5"), got: ' + raw);
     } else {
-        console.warn('CF_AI_GATEWAY_MODEL set but missing required config (account ID, gateway ID, or API key)');
+        const gwProvider = raw.substring(0, slashIdx);
+        const modelId = raw.substring(slashIdx + 1);
+
+        const accountId = process.env.CF_AI_GATEWAY_ACCOUNT_ID;
+        const gatewayId = process.env.CF_AI_GATEWAY_GATEWAY_ID;
+        const apiKey = process.env.CLOUDFLARE_AI_GATEWAY_API_KEY;
+
+        let baseUrl;
+        if (accountId && gatewayId) {
+            baseUrl = 'https://gateway.ai.cloudflare.com/v1/' + accountId + '/' + gatewayId + '/' + gwProvider;
+            if (gwProvider === 'workers-ai') baseUrl += '/v1';
+        } else if (gwProvider === 'workers-ai' && process.env.CF_ACCOUNT_ID) {
+            baseUrl = 'https://api.cloudflare.com/client/v4/accounts/' + process.env.CF_ACCOUNT_ID + '/ai/v1';
+        }
+
+        if (baseUrl && apiKey) {
+            const api = gwProvider === 'anthropic' ? 'anthropic-messages' : 'openai-completions';
+            const providerName = 'cf-ai-gw-' + gwProvider;
+
+            config.models = config.models || {};
+            config.models.providers = config.models.providers || {};
+            config.models.providers[providerName] = {
+                baseUrl: baseUrl,
+                apiKey: apiKey,
+                api: api,
+                models: [{ id: modelId, name: modelId, contextWindow: 131072, maxTokens: 8192 }],
+            };
+            config.agents = config.agents || {};
+            config.agents.defaults = config.agents.defaults || {};
+            config.agents.defaults.model = { primary: providerName + '/' + modelId };
+            console.log('AI Gateway model override: provider=' + providerName + ' model=' + modelId + ' via ' + baseUrl);
+        } else {
+            console.warn('CF_AI_GATEWAY_MODEL set but missing required config (account ID, gateway ID, or API key)');
+        }
     }
 }
 
@@ -220,6 +227,7 @@ if (process.env.CF_AI_GATEWAY_MODEL) {
 // This preserves user-configured settings (groups, guilds, allowlists) while preventing stale
 // keys from old backups from failing OpenClaw's strict config validation.
 // Valid keys derived from openclaw/src/config/types.{telegram,discord,slack}.ts (2026.2.6).
+// MAINTENANCE: Update these allowlists when upgrading OpenClaw to a new version.
 
 const VALID_TELEGRAM_KEYS = new Set([
     'name', 'capabilities', 'markdown', 'commands', 'customCommands', 'configWrites',
@@ -299,6 +307,53 @@ if (process.env.SLACK_BOT_TOKEN && process.env.SLACK_APP_TOKEN) {
 fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
 console.log('Configuration patched successfully');
 EOFPATCH
+
+# ============================================================
+# INJECT SETUP TOKEN (if provided via env var)
+# ============================================================
+# Writes CLAUDE_SETUP_TOKEN into auth-profiles.json and references it in openclaw.json.
+# This avoids re-entering the token after every container restart.
+if [ -n "$CLAUDE_SETUP_TOKEN" ]; then
+    echo "Injecting setup token from CLAUDE_SETUP_TOKEN env var..."
+    node << 'EOFTOKEN'
+const fs = require('fs');
+
+const profilesPath = '/root/.openclaw/agents/main/agent/auth-profiles.json';
+const configPath = '/root/.openclaw/openclaw.json';
+const provider = 'anthropic';
+const profileId = provider + ':default';
+
+// Ensure directory exists
+fs.mkdirSync(require('path').dirname(profilesPath), { recursive: true });
+
+// Read or create auth-profiles.json
+let profiles = {};
+try { profiles = JSON.parse(fs.readFileSync(profilesPath, 'utf8')); } catch {}
+profiles.profiles = profiles.profiles || {};
+
+// Only inject if no existing token (don't overwrite admin-set tokens)
+if (!profiles.profiles[profileId] || !profiles.profiles[profileId].token) {
+    profiles.profiles[profileId] = {
+        type: 'token',
+        provider: provider,
+        token: process.env.CLAUDE_SETUP_TOKEN.trim(),
+    };
+    fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, 2));
+    console.log('Setup token written to auth-profiles.json');
+
+    // Reference in openclaw.json
+    let config = {};
+    try { config = JSON.parse(fs.readFileSync(configPath, 'utf8')); } catch {}
+    config.auth = config.auth || {};
+    config.auth.profiles = config.auth.profiles || {};
+    config.auth.profiles[profileId] = { provider: provider, mode: 'token' };
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    console.log('Config updated with token profile reference');
+} else {
+    console.log('Existing token found, skipping env var injection');
+}
+EOFTOKEN
+fi
 
 # ============================================================
 # START GATEWAY

@@ -3,6 +3,7 @@ import {
   AuthError,
   type AuthProvider,
   approveAllDevices,
+  approveChannelPairing,
   approveDevice,
   type DeviceListResponse,
   getAuthProviders,
@@ -63,6 +64,9 @@ export default function AdminPage() {
   const [setupToken, setSetupToken] = useState("");
   const [setupTokenSaving, setSetupTokenSaving] = useState(false);
   const [deletingProvider, setDeletingProvider] = useState<string | null>(null);
+  const [pairingChannel, setPairingChannel] = useState("telegram");
+  const [pairingCode, setPairingCode] = useState("");
+  const [pairingInProgress, setPairingInProgress] = useState(false);
 
   const fetchDevices = useCallback(async () => {
     try {
@@ -228,6 +232,25 @@ export default function AdminPage() {
       setError(err instanceof Error ? err.message : "Failed to sync");
     } finally {
       setSyncInProgress(false);
+    }
+  };
+
+  const handleApprovePairing = async () => {
+    if (!pairingCode.trim()) return;
+
+    setPairingInProgress(true);
+    try {
+      const result = await approveChannelPairing(pairingChannel, pairingCode.trim());
+      if (result.success) {
+        setPairingCode("");
+        setError(null);
+      } else {
+        setError(result.error || result.stderr || "Pairing approval failed");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to approve pairing");
+    } finally {
+      setPairingInProgress(false);
     }
   };
 
@@ -492,6 +515,47 @@ export default function AdminPage() {
                 ))}
               </div>
             )}
+          </section>
+
+          <section className="devices-section">
+            <div className="section-header">
+              <h2>Channel Pairing</h2>
+            </div>
+            <p className="hint">
+              Approve Telegram or Discord users who sent a pairing code to the bot.
+            </p>
+            <div className="token-form">
+              <select
+                className="token-input"
+                style={{ maxWidth: 140, flexShrink: 0 }}
+                value={pairingChannel}
+                onChange={(e) => setPairingChannel(e.target.value)}
+                disabled={pairingInProgress}
+              >
+                <option value="telegram">Telegram</option>
+                <option value="discord">Discord</option>
+              </select>
+              <input
+                type="text"
+                className="token-input"
+                placeholder="Pairing code (e.g. GH5LCBQC)"
+                value={pairingCode}
+                onChange={(e) => setPairingCode(e.target.value.toUpperCase())}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && pairingCode.trim()) handleApprovePairing();
+                }}
+                disabled={pairingInProgress}
+              />
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleApprovePairing}
+                disabled={pairingInProgress || !pairingCode.trim()}
+              >
+                {pairingInProgress && <ButtonSpinner />}
+                {pairingInProgress ? "Approving..." : "Approve"}
+              </button>
+            </div>
           </section>
 
           <section className="devices-section">

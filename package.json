@@ -8,7 +8,7 @@
     "build": "vite build",
     "deploy": "npm run build && wrangler deploy",
     "dev": "vite dev",
-    "start": "wrangler dev --remote --port 3005",
+    "start": "vite build && vite build --watch & wrangler dev --port 3005",
     "types": "wrangler types",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src/",

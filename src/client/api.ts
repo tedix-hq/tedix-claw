@@ -101,6 +101,28 @@ export async function approveAllDevices(): Promise<ApproveAllResponse> {
   });
 }
 
+// Channel pairing (Telegram, Discord, etc.)
+
+export interface PairingApproveResponse {
+  success: boolean;
+  channel: string;
+  code: string;
+  message?: string;
+  stdout?: string;
+  stderr?: string;
+  error?: string;
+}
+
+export async function approveChannelPairing(
+  channel: string,
+  code: string,
+): Promise<PairingApproveResponse> {
+  return apiRequest<PairingApproveResponse>("/pairing/approve", {
+    method: "POST",
+    body: JSON.stringify({ channel, code }),
+  });
+}
+
 export interface RestartGatewayResponse {
   success: boolean;
   message?: string;
