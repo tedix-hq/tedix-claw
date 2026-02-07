@@ -42,24 +42,24 @@ export async function syncToR2(sandbox: Sandbox, env: OpenClawEnv): Promise<Sync
   }
 
   // Determine which config directory exists
-  // Check new path first, fall back to legacy
-  // Use exit code (0 = exists) rather than stdout parsing to avoid log-flush races
+  // Use stdout-based check instead of exitCode — sandbox Process.exitCode can be
+  // undefined even after completion, causing false negatives with !== 0 checks.
   let configDir = "/root/.openclaw";
   try {
-    const checkNew = await sandbox.startProcess("test -f /root/.openclaw/openclaw.json");
-    await waitForProcess(checkNew, 5000);
-    if (checkNew.exitCode !== 0) {
-      const checkLegacy = await sandbox.startProcess("test -f /root/.clawdbot/clawdbot.json");
-      await waitForProcess(checkLegacy, 5000);
-      if (checkLegacy.exitCode === 0) {
-        configDir = "/root/.clawdbot";
-      } else {
-        return {
-          success: false,
-          error: "Sync aborted: no config file found",
-          details: "Neither openclaw.json nor clawdbot.json found in config directory.",
-        };
-      }
+    const checkProc = await sandbox.startProcess(
+      `test -f /root/.openclaw/openclaw.json && echo "openclaw" || (test -f /root/.clawdbot/clawdbot.json && echo "clawdbot" || echo "none")`,
+    );
+    await waitForProcess(checkProc, 5000);
+    const checkLogs = await checkProc.getLogs();
+    const found = checkLogs.stdout?.trim();
+    if (found === "clawdbot") {
+      configDir = "/root/.clawdbot";
+    } else if (found !== "openclaw") {
+      return {
+        success: false,
+        error: "Sync aborted: no config file found",
+        details: `Neither openclaw.json nor clawdbot.json found in config directory. Check output: "${found}"`,
+      };
     }
   } catch (err) {
     return {

@@ -50,6 +50,8 @@ Notes:
 
 This project packages OpenClaw to run in a [Cloudflare Sandbox](https://developers.cloudflare.com/sandbox/) container, providing a fully managed, always-on deployment without needing to self-host. Optional R2 storage enables persistence across container restarts.
 
+For deeper architecture and state-ownership decisions (including when it makes sense to add D1), see `AGENTS.md` and `PRD.md`.
+
 ## Architecture
 
 ![tedix-claw architecture](./assets/architecture.png)

@@ -101,6 +101,7 @@ When adding new functionality, add corresponding tests.
 
 - `README.md` - User-facing documentation (setup, configuration, usage)
 - `AGENTS.md` - This file, for AI agents
+- `PRD.md` - Product/architecture notes and decision triggers (e.g., when to add D1)
 
 Development documentation goes in AGENTS.md, not README.md.
 
@@ -130,6 +131,26 @@ Browser
 │  └───────────────────────────────┘  │
 └─────────────────────────────────────┘
 ```
+
+## State and Storage
+
+Default design is “thin Worker, thick container”:
+
+- OpenClaw owns durable state on the container filesystem (config, pairing, conversations, workspace, skills).
+- R2 is optional persistence via backup/restore (`/data/openclaw` mount + periodic sync).
+- The Worker is stateless by default (proxy + auth + lifecycle + admin APIs).
+
+Database guidance:
+
+- D1 is not used today. It becomes worth adding when the Worker needs its own durable, queryable control-plane state (multi-tenancy, audit/metering, policy, billing). See `PRD.md`.
+- DO SQLite is available for small, sandbox-coupled Worker state because the `Sandbox` Durable Object is configured as a SQLite class.
+
+## Governance Direction
+
+Current strategy is **per-gateway governance config** (multiple disposable gateways) rather than a multi-tenant SaaS dashboard.
+
+- The Worker admin UI should focus on governance and safety constraints (operators, approvals, budgets, tool policy baselines), not re-implement OpenClaw’s runtime UI.
+- See `PRD.md` (“Governance Control Plane Strategy”) for the rationale, scope, and the evolution path toward a multi-tenant control plane.
 
 ### Key Files
 

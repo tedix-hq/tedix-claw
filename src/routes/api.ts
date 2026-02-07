@@ -4,6 +4,7 @@ import { R2_MOUNT_PATH } from "../config";
 import {
   ensureGateway,
   findExistingGateway,
+  lastMountError,
   mountR2Storage,
   syncToR2,
   waitForProcess,
@@ -233,9 +234,7 @@ adminApi.post("/pairing/approve", async (c) => {
     await ensureGateway(sandbox, c.env);
 
     // openclaw pairing works directly with config files, no --url/--token needed
-    const proc = await sandbox.startProcess(
-      `openclaw pairing approve ${channel} ${code}`,
-    );
+    const proc = await sandbox.startProcess(`openclaw pairing approve ${channel} ${code}`);
     await waitForProcess(proc, CLI_TIMEOUT_MS);
 
     const logs = await proc.getLogs();
@@ -303,6 +302,7 @@ adminApi.get("/storage", async (c) => {
     configured: hasCredentials,
     missing: missing.length > 0 ? missing : undefined,
     lastSync,
+    mountError: lastMountError || undefined,
     message: hasCredentials
       ? "R2 storage is configured. Your data will persist across container restarts."
       : "R2 storage is not configured. Paired devices and conversations will be lost when the container restarts.",

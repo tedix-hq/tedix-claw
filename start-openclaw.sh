@@ -8,10 +8,20 @@
 
 set -e
 
-# Only skip if a gateway process exists AND the port is actually listening.
-# pgrep alone is unreliable — zombie/dying processes cause false positives
-# after a restart, leading to no gateway running at all.
-if pgrep -f "openclaw gateway" > /dev/null 2>&1 && ss -tlnp 2>/dev/null | grep -q ':18789'; then
+# Prevent multiple concurrent instances via file lock.
+# The sandbox may start multiple start-openclaw.sh processes simultaneously
+# from concurrent HTTP requests. Without a lock, they race to start the gateway.
+LOCKFILE="/tmp/start-openclaw.lock"
+if ! mkdir "$LOCKFILE" 2>/dev/null; then
+    echo "Another start-openclaw.sh is already running (lockfile exists), exiting."
+    exit 0
+fi
+# Clean up lock on exit (including errors due to set -e)
+trap 'rmdir "$LOCKFILE" 2>/dev/null' EXIT
+
+# Check if gateway is already running by testing the port.
+# Use curl since ss/netstat may not be installed in the container.
+if curl -sf --max-time 2 http://localhost:18789/ > /dev/null 2>&1; then
     echo "OpenClaw gateway is already running on port 18789, exiting."
     exit 0
 fi
@@ -61,13 +71,19 @@ should_restore_from_r2() {
     fi
 }
 
+# R2 restore timeout (seconds). s3fs-backed copies can hang if the mount is slow.
+R2_RESTORE_TIMEOUT=60
+
 # Check for backup data in R2
 if [ -f "$BACKUP_DIR/openclaw/openclaw.json" ]; then
     if should_restore_from_r2; then
-        echo "Restoring from R2 backup at $BACKUP_DIR/openclaw..."
-        cp -a "$BACKUP_DIR/openclaw/." "$CONFIG_DIR/"
-        cp -f "$BACKUP_DIR/.last-sync" "$CONFIG_DIR/.last-sync" 2>/dev/null || true
-        echo "Restored config from R2 backup"
+        echo "Restoring from R2 backup at $BACKUP_DIR/openclaw (timeout: ${R2_RESTORE_TIMEOUT}s)..."
+        if timeout "$R2_RESTORE_TIMEOUT" cp -a "$BACKUP_DIR/openclaw/." "$CONFIG_DIR/"; then
+            cp -f "$BACKUP_DIR/.last-sync" "$CONFIG_DIR/.last-sync" 2>/dev/null || true
+            echo "Restored config from R2 backup"
+        else
+            echo "WARNING: R2 config restore timed out or failed, starting fresh"
+        fi
     fi
 elif [ -d "$BACKUP_DIR" ]; then
     echo "R2 mounted at $BACKUP_DIR but no backup data found yet"
@@ -80,10 +96,13 @@ fi
 WORKSPACE_DIR="/root/clawd"
 if [ -d "$BACKUP_DIR/workspace" ] && [ "$(ls -A $BACKUP_DIR/workspace 2>/dev/null)" ]; then
     if should_restore_from_r2; then
-        echo "Restoring workspace from $BACKUP_DIR/workspace..."
+        echo "Restoring workspace from $BACKUP_DIR/workspace (timeout: ${R2_RESTORE_TIMEOUT}s)..."
         mkdir -p "$WORKSPACE_DIR"
-        cp -a "$BACKUP_DIR/workspace/." "$WORKSPACE_DIR/"
-        echo "Restored workspace from R2 backup"
+        if timeout "$R2_RESTORE_TIMEOUT" cp -a "$BACKUP_DIR/workspace/." "$WORKSPACE_DIR/"; then
+            echo "Restored workspace from R2 backup"
+        else
+            echo "WARNING: R2 workspace restore timed out or failed"
+        fi
     fi
 fi
 
@@ -91,10 +110,13 @@ fi
 SKILLS_DIR="/root/clawd/skills"
 if [ -d "$BACKUP_DIR/skills" ] && [ "$(ls -A $BACKUP_DIR/skills 2>/dev/null)" ]; then
     if should_restore_from_r2; then
-        echo "Restoring skills from $BACKUP_DIR/skills..."
+        echo "Restoring skills from $BACKUP_DIR/skills (timeout: ${R2_RESTORE_TIMEOUT}s)..."
         mkdir -p "$SKILLS_DIR"
-        cp -a "$BACKUP_DIR/skills/." "$SKILLS_DIR/"
-        echo "Restored skills from R2 backup"
+        if timeout "$R2_RESTORE_TIMEOUT" cp -a "$BACKUP_DIR/skills/." "$SKILLS_DIR/"; then
+            echo "Restored skills from R2 backup"
+        else
+            echo "WARNING: R2 skills restore timed out or failed"
+        fi
     fi
 fi
 
@@ -180,6 +202,25 @@ if (process.env.OPENCLAW_DEV_MODE === 'true') {
 //   workers-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast
 //   openai/gpt-4o
 //   anthropic/claude-sonnet-4-5
+// Clean up stale AI Gateway providers if env vars are no longer set.
+// This handles the case where AI Gateway secrets were removed but the
+// R2-restored config still references them as the default model.
+if (!process.env.CF_AI_GATEWAY_MODEL && !process.env.CLOUDFLARE_AI_GATEWAY_API_KEY) {
+    if (config.models && config.models.providers) {
+        const staleKeys = Object.keys(config.models.providers).filter(k => k.startsWith('cf-ai-gw-'));
+        for (const key of staleKeys) {
+            console.log('Removing stale AI Gateway provider:', key);
+            delete config.models.providers[key];
+        }
+    }
+    // Clear default model if it pointed to a removed provider
+    const defaultModel = config.agents?.defaults?.model?.primary;
+    if (defaultModel && defaultModel.startsWith('cf-ai-gw-')) {
+        console.log('Clearing stale default model:', defaultModel);
+        delete config.agents.defaults.model;
+    }
+}
+
 if (process.env.CF_AI_GATEWAY_MODEL) {
     const raw = process.env.CF_AI_GATEWAY_MODEL;
     const slashIdx = raw.indexOf('/');
@@ -341,12 +382,24 @@ if (!profiles.profiles[profileId] || !profiles.profiles[profileId].token) {
     fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, 2));
     console.log('Setup token written to auth-profiles.json');
 
-    // Reference in openclaw.json
+    // Reference in openclaw.json and ensure Anthropic provider exists
     let config = {};
     try { config = JSON.parse(fs.readFileSync(configPath, 'utf8')); } catch {}
     config.auth = config.auth || {};
     config.auth.profiles = config.auth.profiles || {};
     config.auth.profiles[profileId] = { provider: provider, mode: 'token' };
+
+    // When using a setup token with no ANTHROPIC_API_KEY, onboard creates a
+    // config without model providers. The gateway needs at least one provider
+    // to know which models are available. Add a basic Anthropic provider entry
+    // so the gateway can use the setup token credentials from auth-profiles.json.
+    config.models = config.models || {};
+    config.models.providers = config.models.providers || {};
+    if (!config.models.providers.anthropic) {
+        config.models.providers.anthropic = { api: 'anthropic-messages' };
+        console.log('Added default Anthropic provider for setup token auth');
+    }
+
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
     console.log('Config updated with token profile reference');
 } else {
@@ -366,10 +419,23 @@ rm -f "$CONFIG_DIR/gateway.lock" 2>/dev/null || true
 
 echo "Dev mode: ${OPENCLAW_DEV_MODE:-false}"
 
+# Run gateway as a child process (not exec) so bash stays alive for the
+# lockfile cleanup trap. If we used exec, bash would be replaced and the
+# trap would never fire, leaving a stale lockfile that blocks future starts.
 if [ -n "$OPENCLAW_GATEWAY_TOKEN" ]; then
     echo "Starting gateway with token auth..."
-    exec openclaw gateway --port 18789 --verbose --allow-unconfigured --bind lan --token "$OPENCLAW_GATEWAY_TOKEN"
+    openclaw gateway --port 18789 --verbose --allow-unconfigured --bind lan --token "$OPENCLAW_GATEWAY_TOKEN" &
 else
     echo "Starting gateway with device pairing (no token)..."
-    exec openclaw gateway --port 18789 --verbose --allow-unconfigured --bind lan
+    openclaw gateway --port 18789 --verbose --allow-unconfigured --bind lan &
 fi
+
+GATEWAY_PID=$!
+echo "Gateway started with PID $GATEWAY_PID"
+
+# Wait for the gateway process. When it exits (crash or shutdown), the
+# EXIT trap will clean up the lockfile so a new start can proceed.
+wait $GATEWAY_PID
+EXIT_CODE=$?
+echo "Gateway exited with code $EXIT_CODE"
+exit $EXIT_CODE

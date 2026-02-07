@@ -33,6 +33,9 @@ async function isR2Mounted(sandbox: Sandbox): Promise<boolean> {
  * @param env - Worker environment bindings
  * @returns true if mounted successfully, false otherwise
  */
+/** Last mount error for diagnostics (exposed via /api/admin/storage) */
+export let lastMountError: string | null = null;
+
 export async function mountR2Storage(sandbox: Sandbox, env: OpenClawEnv): Promise<boolean> {
   // Skip if R2 credentials are not configured
   if (!env.R2_ACCESS_KEY_ID || !env.R2_SECRET_ACCESS_KEY || !env.CF_ACCOUNT_ID) {
@@ -50,24 +53,29 @@ export async function mountR2Storage(sandbox: Sandbox, env: OpenClawEnv): Promis
 
   const bucketName = getR2BucketName(env);
   try {
-    console.log("Mounting R2 bucket", bucketName, "at", R2_MOUNT_PATH);
+    const endpoint = `https://${env.CF_ACCOUNT_ID}.r2.cloudflarestorage.com`;
+    console.log("Mounting R2 bucket", bucketName, "at", R2_MOUNT_PATH, "endpoint:", endpoint);
     await sandbox.mountBucket(bucketName, R2_MOUNT_PATH, {
-      endpoint: `https://${env.CF_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-      // Pass credentials explicitly since we use R2_* naming instead of AWS_*
+      endpoint,
+      provider: "r2",
       credentials: {
         accessKeyId: env.R2_ACCESS_KEY_ID,
         secretAccessKey: env.R2_SECRET_ACCESS_KEY,
       },
     });
     console.log("R2 bucket mounted successfully - openclaw data will persist across sessions");
+    lastMountError = null;
     return true;
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : String(err);
+    const errorMessage =
+      err instanceof Error ? `${err.message}${err.stack ? `\n${err.stack}` : ""}` : String(err);
     console.log("R2 mount error:", errorMessage);
+    lastMountError = errorMessage;
 
     // Check again if it's mounted - the error might be misleading
     if (await isR2Mounted(sandbox)) {
       console.log("R2 bucket is mounted despite error");
+      lastMountError = null;
       return true;
     }
 
