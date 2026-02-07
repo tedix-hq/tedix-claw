@@ -41,20 +41,25 @@ export async function syncToR2(sandbox: Sandbox, env: OpenClawEnv): Promise<Sync
     return { success: false, error: "Failed to mount R2 storage" };
   }
 
-  // Verify config exists before syncing
-  const configDir = "/root/.openclaw";
+  // Determine which config directory exists
+  // Check new path first, fall back to legacy
+  // Use exit code (0 = exists) rather than stdout parsing to avoid log-flush races
+  let configDir = "/root/.openclaw";
   try {
-    const checkConfig = await sandbox.startProcess(
-      'test -f /root/.openclaw/openclaw.json && echo "ok"',
-    );
-    await waitForProcess(checkConfig, 5000);
-    const logs = await checkConfig.getLogs();
-    if (!logs.stdout?.includes("ok")) {
-      return {
-        success: false,
-        error: "Sync aborted: no config file found",
-        details: "openclaw.json not found in config directory.",
-      };
+    const checkNew = await sandbox.startProcess("test -f /root/.openclaw/openclaw.json");
+    await waitForProcess(checkNew, 5000);
+    if (checkNew.exitCode !== 0) {
+      const checkLegacy = await sandbox.startProcess("test -f /root/.clawdbot/clawdbot.json");
+      await waitForProcess(checkLegacy, 5000);
+      if (checkLegacy.exitCode === 0) {
+        configDir = "/root/.clawdbot";
+      } else {
+        return {
+          success: false,
+          error: "Sync aborted: no config file found",
+          details: "Neither openclaw.json nor clawdbot.json found in config directory.",
+        };
+      }
     }
   } catch (err) {
     return {

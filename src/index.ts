@@ -116,10 +116,8 @@ function buildSandboxOptions(env: OpenClawEnv): SandboxOptions {
 // Main app
 const app = new Hono<AppEnv>();
 
-// =============================================================================
-// MIDDLEWARE: Applied to ALL routes
-// =============================================================================
-
+// ======================================================================// MIDDLEWARE: Applied to ALL routes
+// ======================================================================
 // Middleware: Log every request
 app.use("*", async (c, next) => {
   const url = new URL(c.req.url);
@@ -139,10 +137,8 @@ app.use("*", async (c, next) => {
   await next();
 });
 
-// =============================================================================
-// PUBLIC ROUTES: No Cloudflare Access authentication required
-// =============================================================================
-
+// ======================================================================// PUBLIC ROUTES: No Cloudflare Access authentication required
+// ======================================================================
 // Mount public routes first (before auth middleware)
 // Includes: /sandbox-health, /logo.png, /logo-small.png, /api/status, /_admin/assets/*
 app.route("/", publicRoutes);
@@ -150,10 +146,8 @@ app.route("/", publicRoutes);
 // Mount CDP routes (uses shared secret auth via query param, not CF Access)
 app.route("/cdp", cdp);
 
-// =============================================================================
-// PROTECTED ROUTES: Cloudflare Access authentication required
-// =============================================================================
-
+// ======================================================================// PROTECTED ROUTES: Cloudflare Access authentication required
+// ======================================================================
 // Middleware: Validate required environment variables (skip in dev mode and for debug routes)
 app.use("*", async (c, next) => {
   const url = new URL(c.req.url);
@@ -221,10 +215,8 @@ app.use("/debug/*", async (c, next) => {
 });
 app.route("/debug", debug);
 
-// =============================================================================
-// CATCH-ALL: Proxy to OpenClaw gateway
-// =============================================================================
-
+// ======================================================================// CATCH-ALL: Proxy to OpenClaw gateway
+// ======================================================================
 app.all("*", async (c) => {
   const sandbox = c.get("sandbox");
   const request = c.req.raw;
@@ -454,6 +446,12 @@ async function scheduled(
 ): Promise<void> {
   const options = buildSandboxOptions(env);
   const sandbox = getSandbox(env.Sandbox, "openclaw", options);
+
+  const gatewayProcess = await findExistingGateway(sandbox);
+  if (!gatewayProcess) {
+    console.log("[cron] Gateway not running yet, skipping sync");
+    return;
+  }
 
   console.log("[cron] Starting backup sync to R2...");
   const result = await syncToR2(sandbox, env);
