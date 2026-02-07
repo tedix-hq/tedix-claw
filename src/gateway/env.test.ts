@@ -135,9 +135,7 @@ describe("buildEnvVars", () => {
       CF_AI_GATEWAY_MODEL: "workers-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast",
     });
     const result = buildEnvVars(env);
-    expect(result.CF_AI_GATEWAY_MODEL).toBe(
-      "workers-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast",
-    );
+    expect(result.CF_AI_GATEWAY_MODEL).toBe("workers-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast");
   });
 
   it("passes CF_ACCOUNT_ID to container", () => {
