@@ -250,7 +250,7 @@ export default function AdminPage() {
               Paired devices and conversations will be lost when the container restarts. To enable
               persistent storage, configure R2 credentials. See the{" "}
               <a
-                href="https://github.com/cloudflare/tedix-claw"
+                href="https://github.com/tedix-hq/tedix-claw"
                 target="_blank"
                 rel="noopener noreferrer"
               >
