@@ -17,8 +17,7 @@ export async function findExistingGateway(sandbox: Sandbox): Promise<Process | n
       // Match gateway process
       // Don't match CLI commands like "openclaw devices list"
       const isGatewayProcess =
-        proc.command.includes('start-openclaw.sh') ||
-        proc.command.includes('openclaw gateway');
+        proc.command.includes('start-openclaw.sh') || proc.command.includes('openclaw gateway');
       const isCliCommand =
         proc.command.includes('openclaw devices') ||
         proc.command.includes('openclaw --version') ||

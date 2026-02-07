@@ -540,7 +540,10 @@ adminApi.delete('/auth/providers/:profileId', async (c) => {
     });
     c.executionCtx.waitUntil(bootPromise);
 
-    return c.json({ success: true, message: `Provider "${profileId}" removed. Gateway is restarting...` });
+    return c.json({
+      success: true,
+      message: `Provider "${profileId}" removed. Gateway is restarting...`,
+    });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return c.json({ success: false, error: errorMessage }, 500);

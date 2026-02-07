@@ -163,10 +163,7 @@ export async function getAuthProviders(): Promise<AuthProvidersResponse> {
   return apiRequest<AuthProvidersResponse>('/auth/providers');
 }
 
-export async function saveSetupToken(
-  provider: string,
-  token: string,
-): Promise<SetupTokenResponse> {
+export async function saveSetupToken(provider: string, token: string): Promise<SetupTokenResponse> {
   return apiRequest<SetupTokenResponse>('/auth/setup-token', {
     method: 'POST',
     body: JSON.stringify({ provider, token }),
