@@ -62,7 +62,7 @@ rm -f "$E2E_CONFIG"
 
 # Set secrets for the deployed worker
 echo "Setting worker secrets..." >&2
-echo "$GATEWAY_TOKEN" | npx wrangler secret put GATEWAY_TOKEN --name "$WORKER_NAME" >&2
+echo "$GATEWAY_TOKEN" | npx wrangler secret put OPENCLAW_GATEWAY_TOKEN --name "$WORKER_NAME" >&2
 echo "$CF_ACCESS_TEAM_DOMAIN" | npx wrangler secret put CF_ACCESS_TEAM_DOMAIN --name "$WORKER_NAME" >&2
 echo "$R2_ACCESS_KEY_ID" | npx wrangler secret put R2_ACCESS_KEY_ID --name "$WORKER_NAME" >&2
 echo "$R2_SECRET_ACCESS_KEY" | npx wrangler secret put R2_SECRET_ACCESS_KEY --name "$WORKER_NAME" >&2
