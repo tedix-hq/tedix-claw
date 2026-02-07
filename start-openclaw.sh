@@ -216,45 +216,84 @@ if (process.env.CF_AI_GATEWAY_MODEL) {
     }
 }
 
-// Telegram configuration
-// Overwrite entire channel object to drop stale keys from old R2 backups
-// that would fail OpenClaw's strict config validation (see #47)
-if (process.env.TELEGRAM_BOT_TOKEN) {
-    const dmPolicy = process.env.TELEGRAM_DM_POLICY || 'pairing';
-    config.channels.telegram = {
-        botToken: process.env.TELEGRAM_BOT_TOKEN,
-        enabled: true,
-        dmPolicy: dmPolicy,
-    };
-    if (process.env.TELEGRAM_DM_ALLOW_FROM) {
-        config.channels.telegram.allowFrom = process.env.TELEGRAM_DM_ALLOW_FROM.split(',');
-    } else if (dmPolicy === 'open') {
-        config.channels.telegram.allowFrom = ['*'];
+// Channel config strategy: merge env vars into R2-restored config, filtering to known valid keys.
+// This preserves user-configured settings (groups, guilds, allowlists) while preventing stale
+// keys from old backups from failing OpenClaw's strict config validation.
+// Valid keys derived from openclaw/src/config/types.{telegram,discord,slack}.ts (2026.2.6).
+
+const VALID_TELEGRAM_KEYS = new Set([
+    'name', 'capabilities', 'markdown', 'commands', 'customCommands', 'configWrites',
+    'dmPolicy', 'enabled', 'botToken', 'tokenFile', 'replyToMode', 'groups',
+    'allowFrom', 'groupAllowFrom', 'groupPolicy', 'historyLimit', 'dmHistoryLimit', 'dms',
+    'textChunkLimit', 'chunkMode', 'blockStreaming', 'draftChunk', 'blockStreamingCoalesce',
+    'streamMode', 'mediaMaxMb', 'timeoutSeconds', 'retry', 'network', 'proxy',
+    'webhookUrl', 'webhookSecret', 'webhookPath', 'actions', 'reactionNotifications',
+    'reactionLevel', 'heartbeat', 'linkPreview', 'responsePrefix', 'accounts',
+]);
+
+const VALID_DISCORD_KEYS = new Set([
+    'name', 'capabilities', 'markdown', 'commands', 'configWrites', 'enabled', 'token',
+    'allowBots', 'groupPolicy', 'textChunkLimit', 'chunkMode', 'blockStreaming',
+    'blockStreamingCoalesce', 'maxLinesPerMessage', 'mediaMaxMb', 'historyLimit',
+    'dmHistoryLimit', 'dms', 'retry', 'actions', 'replyToMode', 'dm', 'guilds',
+    'heartbeat', 'execApprovals', 'intents', 'pluralkit', 'responsePrefix', 'accounts',
+]);
+
+const VALID_SLACK_KEYS = new Set([
+    'name', 'capabilities', 'markdown', 'commands', 'configWrites', 'enabled',
+    'botToken', 'appToken', 'userToken', 'userTokenReadOnly', 'allowBots',
+    'requireMention', 'groupPolicy', 'historyLimit', 'dmHistoryLimit', 'dms',
+    'textChunkLimit', 'chunkMode', 'blockStreaming', 'blockStreamingCoalesce',
+    'mediaMaxMb', 'reactionNotifications', 'reactionAllowlist', 'replyToMode',
+    'replyToModeByChatType', 'thread', 'actions', 'slashCommand', 'dm',
+    'channels', 'heartbeat', 'responsePrefix', 'accounts',
+]);
+
+function filterKeys(obj, validKeys) {
+    const filtered = {};
+    for (const key of Object.keys(obj)) {
+        if (validKeys.has(key)) filtered[key] = obj[key];
+        else console.log('Stripped unknown channel key:', key);
     }
+    return filtered;
+}
+
+// Telegram configuration
+if (process.env.TELEGRAM_BOT_TOKEN) {
+    const existing = filterKeys(config.channels.telegram || {}, VALID_TELEGRAM_KEYS);
+    existing.botToken = process.env.TELEGRAM_BOT_TOKEN;
+    existing.enabled = true;
+    if (process.env.TELEGRAM_DM_POLICY) existing.dmPolicy = process.env.TELEGRAM_DM_POLICY;
+    if (!existing.dmPolicy) existing.dmPolicy = 'pairing';
+    if (process.env.TELEGRAM_DM_ALLOW_FROM) {
+        existing.allowFrom = process.env.TELEGRAM_DM_ALLOW_FROM.split(',');
+    } else if (existing.dmPolicy === 'open' && !existing.allowFrom) {
+        existing.allowFrom = ['*'];
+    }
+    config.channels.telegram = existing;
 }
 
 // Discord configuration
-// Discord uses a nested dm object: dm.policy, dm.allowFrom (per DiscordDmConfig)
 if (process.env.DISCORD_BOT_TOKEN) {
-    const dmPolicy = process.env.DISCORD_DM_POLICY || 'pairing';
-    const dm = { policy: dmPolicy };
-    if (dmPolicy === 'open') {
-        dm.allowFrom = ['*'];
+    const existing = filterKeys(config.channels.discord || {}, VALID_DISCORD_KEYS);
+    existing.token = process.env.DISCORD_BOT_TOKEN;
+    existing.enabled = true;
+    existing.dm = existing.dm || {};
+    if (process.env.DISCORD_DM_POLICY) existing.dm.policy = process.env.DISCORD_DM_POLICY;
+    if (!existing.dm.policy) existing.dm.policy = 'pairing';
+    if (existing.dm.policy === 'open' && !existing.dm.allowFrom) {
+        existing.dm.allowFrom = ['*'];
     }
-    config.channels.discord = {
-        token: process.env.DISCORD_BOT_TOKEN,
-        enabled: true,
-        dm: dm,
-    };
+    config.channels.discord = existing;
 }
 
 // Slack configuration
 if (process.env.SLACK_BOT_TOKEN && process.env.SLACK_APP_TOKEN) {
-    config.channels.slack = {
-        botToken: process.env.SLACK_BOT_TOKEN,
-        appToken: process.env.SLACK_APP_TOKEN,
-        enabled: true,
-    };
+    const existing = filterKeys(config.channels.slack || {}, VALID_SLACK_KEYS);
+    existing.botToken = process.env.SLACK_BOT_TOKEN;
+    existing.appToken = process.env.SLACK_APP_TOKEN;
+    existing.enabled = true;
+    config.channels.slack = existing;
 }
 
 fs.writeFileSync(configPath, JSON.stringify(config, null, 2));

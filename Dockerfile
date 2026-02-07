@@ -22,7 +22,7 @@ RUN npm install -g pnpm
 
 # Install OpenClaw
 # Pin to specific version for reproducible builds
-RUN npm install -g openclaw@2026.2.3 \
+RUN npm install -g openclaw@2026.2.6 \
     && openclaw --version
 
 # Create OpenClaw directories
@@ -31,7 +31,7 @@ RUN mkdir -p /root/.openclaw \
     && mkdir -p /root/clawd/skills
 
 # Copy startup script
-# Build cache bust: 2026-02-06-v30-ai-gateway
+# Build cache bust: 2026-02-07-v32-openclaw-2026.2.6
 COPY start-openclaw.sh /usr/local/bin/start-openclaw.sh
 RUN chmod +x /usr/local/bin/start-openclaw.sh
 

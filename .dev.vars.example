@@ -1,8 +1,8 @@
 # Copy this to .dev.vars and fill in your values
 # .dev.vars is gitignored and used by wrangler dev
 
-# AI Provider (at least one required)
-ANTHROPIC_API_KEY=sk-ant-...
+# ─── AI Provider (at least one required) ───────────────────────────
+# ANTHROPIC_API_KEY=sk-ant-...
 # OPENAI_API_KEY=sk-...
 
 # Cloudflare AI Gateway (alternative to direct provider keys)
@@ -11,32 +11,35 @@ ANTHROPIC_API_KEY=sk-ant-...
 # CF_AI_GATEWAY_GATEWAY_ID=your-gateway-id
 # CF_AI_GATEWAY_MODEL=workers-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast
 
-# Legacy AI Gateway (still supported)
-# AI_GATEWAY_API_KEY=your-key
-# AI_GATEWAY_BASE_URL=https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/anthropic
+# ─── Development mode ──────────────────────────────────────────────
+# Skips CF Access auth and bypasses device pairing
+DEV_MODE=true
 
-# Local development mode - skips Cloudflare Access auth and bypasses device pairing
-# DEV_MODE=true
+# Enable debug routes at /debug/*
+DEBUG_ROUTES=true
 
-# E2E test mode - skips Cloudflare Access auth but keeps device pairing enabled
-# Use this for automated tests that need to test the real pairing flow
-# E2E_TEST_MODE=true
-
-# Enable debug routes at /debug/* (optional)
-# DEBUG_ROUTES=true
-
-# Optional - set a fixed token instead of auto-generated
+# ─── Gateway auth ──────────────────────────────────────────────────
+# Fixed gateway token for dev (in prod, use wrangler secret put)
 OPENCLAW_GATEWAY_TOKEN=dev-token-change-in-prod
 
-# Cloudflare Access configuration for /_admin and /api routes
-# Required for admin UI and device pairing API in production
+# ─── Cloudflare Access (production only) ───────────────────────────
 # CF_ACCESS_TEAM_DOMAIN=myteam.cloudflareaccess.com
 # CF_ACCESS_AUD=your-application-audience-tag
 
-# Optional chat channels
-# TELEGRAM_BOT_TOKEN=optional
-# DISCORD_BOT_TOKEN=optional
+# ─── R2 persistent storage ─────────────────────────────────────────
+# Required for persistence across container restarts
+# R2_ACCESS_KEY_ID=your-r2-key-id
+# R2_SECRET_ACCESS_KEY=your-r2-secret
+# CF_ACCOUNT_ID=your-cloudflare-account-id
 
-# CDP (Chrome DevTools Protocol) configuration for browser automation
+# ─── Chat channels (optional) ──────────────────────────────────────
+# Env vars set the token/enabled state; other channel settings
+# (allowFrom, group config) are preserved from R2 restore.
+# TELEGRAM_BOT_TOKEN=your-bot-token
+# TELEGRAM_DM_POLICY=pairing
+# DISCORD_BOT_TOKEN=your-bot-token
+# DISCORD_DM_POLICY=pairing
+
+# ─── Browser automation (optional) ─────────────────────────────────
 # CDP_SECRET=shared-secret-for-cdp-auth
 # WORKER_URL=https://your-worker.example.com

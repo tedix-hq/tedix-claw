@@ -31,7 +31,7 @@ src/
 │   └── utils.ts      # Shared utilities (waitForProcess)
 ├── routes/           # API route handlers
 │   ├── api.ts        # /api/* endpoints (devices, gateway)
-│   ├── admin.ts      # /_admin/* static file serving
+│   ├── admin-ui.ts   # /_admin/* static file serving
 │   └── debug.ts      # /debug/* endpoints
 └── client/           # React admin UI (Vite)
     ├── App.tsx
@@ -142,12 +142,24 @@ Browser
 
 ## Local Development
 
+`bun run start` runs `wrangler dev --remote`, which executes both the Worker and sandbox on
+Cloudflare infra. This gives you real R2 mounting, persistence, and WebSocket support.
+Pair with `cloudflared tunnel` to expose `dev.tedix.tech` → `localhost:3005`.
+
 ```bash
-npm install
+bun install
 cp .dev.vars.example .dev.vars
-# Edit .dev.vars with your ANTHROPIC_API_KEY
-npm run start
+# Edit .dev.vars with your ANTHROPIC_API_KEY (or AI Gateway credentials)
+# For R2 persistence, also set R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, CF_ACCOUNT_ID
+bun run build && bun run start
 ```
+
+On first run the container cold-starts (~1-2 min). Subsequent restarts reuse the running sandbox.
+With R2 credentials in `.dev.vars`, auth profiles, paired devices, and channel configs persist
+across restarts via R2 backup/restore.
+
+**Without R2 credentials**: the container starts fresh each time. Use `ANTHROPIC_API_KEY` in
+`.dev.vars` to avoid re-authenticating — it gets seeded by `openclaw onboard` on every boot.
 
 ### Environment Variables
 
@@ -159,9 +171,14 @@ DEV_MODE=true           # Skips CF Access auth + device pairing
 DEBUG_ROUTES=true       # Enables /debug/* routes
 ```
 
-### WebSocket Limitations
+### Config Patching
 
-Local development with `wrangler dev` has issues proxying WebSocket connections through the sandbox. HTTP requests work but WebSocket connections may fail. Deploy to Cloudflare for full functionality.
+`start-openclaw.sh` runs on every container boot. It **merges** env-var-controlled fields into the
+existing config (restored from R2), filtering to known valid keys only. This means:
+- Channel configs set via the engine UI survive restarts (known keys are preserved)
+- Env vars like `TELEGRAM_BOT_TOKEN` always win for the fields they control
+- Stale/invalid keys from old R2 backups are stripped to prevent OpenClaw config validation failures
+- To force a full config reset, delete the R2 backup and restart
 
 ## Docker Image Caching
 
