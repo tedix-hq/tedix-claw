@@ -31,7 +31,7 @@ RUN mkdir -p /root/.openclaw \
     && mkdir -p /root/clawd/skills
 
 # Copy startup script
-# Build cache bust: 2026-02-07-v38-add-anthropic-provider-for-setup-token
+# Build cache bust: 2026-02-07-v40-fix-stale-lockfile-recovery
 COPY start-openclaw.sh /usr/local/bin/start-openclaw.sh
 RUN chmod +x /usr/local/bin/start-openclaw.sh
 

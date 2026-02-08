@@ -8,23 +8,31 @@
 
 set -e
 
+# Check if gateway is already running by testing the port.
+# Use curl since ss/netstat may not be installed in the container.
+# This check MUST come before the lockfile check — if the gateway is running,
+# we exit immediately regardless of lock state.
+if curl -sf --max-time 2 http://localhost:18789/ > /dev/null 2>&1; then
+    echo "OpenClaw gateway is already running on port 18789, exiting."
+    exit 0
+fi
+
 # Prevent multiple concurrent instances via file lock.
 # The sandbox may start multiple start-openclaw.sh processes simultaneously
 # from concurrent HTTP requests. Without a lock, they race to start the gateway.
 LOCKFILE="/tmp/start-openclaw.lock"
 if ! mkdir "$LOCKFILE" 2>/dev/null; then
-    echo "Another start-openclaw.sh is already running (lockfile exists), exiting."
-    exit 0
+    # Lock exists but gateway isn't running (checked above).
+    # Previous instance was killed without cleanup (SIGKILL skips traps).
+    echo "Stale lockfile detected (gateway not running), recovering..."
+    rm -rf "$LOCKFILE"
+    if ! mkdir "$LOCKFILE" 2>/dev/null; then
+        echo "Failed to acquire lock after recovery, exiting."
+        exit 1
+    fi
 fi
 # Clean up lock on exit (including errors due to set -e)
 trap 'rmdir "$LOCKFILE" 2>/dev/null' EXIT
-
-# Check if gateway is already running by testing the port.
-# Use curl since ss/netstat may not be installed in the container.
-if curl -sf --max-time 2 http://localhost:18789/ > /dev/null 2>&1; then
-    echo "OpenClaw gateway is already running on port 18789, exiting."
-    exit 0
-fi
 
 CONFIG_DIR="/root/.openclaw"
 CONFIG_FILE="$CONFIG_DIR/openclaw.json"
@@ -190,6 +198,13 @@ if (process.env.OPENCLAW_DEV_MODE === 'true') {
     config.gateway.controlUi = config.gateway.controlUi || {};
     config.gateway.controlUi.allowInsecureAuth = true;
 }
+
+// Enable HTTP REST endpoints for programmatic access (A2A, MCP, CLI)
+// This enables the OpenAI-compatible POST /v1/chat/completions endpoint
+config.gateway.http = config.gateway.http || {};
+config.gateway.http.endpoints = config.gateway.http.endpoints || {};
+config.gateway.http.endpoints.chatCompletions = { enabled: true };
+config.gateway.http.endpoints.responses = { enabled: true };
 
 // Legacy AI Gateway base URL override:
 // ANTHROPIC_BASE_URL is picked up natively by the Anthropic SDK,

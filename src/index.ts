@@ -444,8 +444,29 @@ app.all("*", async (c) => {
     });
   }
 
+  // Inject gateway token for HTTP requests (same as WebSocket injection above).
+  // The gateway's HTTP API (e.g., /v1/chat/completions) expects Authorization: Bearer.
+  // The SPA/WebSocket uses ?token= query param. We inject both for compatibility.
+  let httpRequest = request;
+  if (c.env.OPENCLAW_GATEWAY_TOKEN) {
+    const headers = new Headers(request.headers);
+    if (!headers.has("Authorization")) {
+      headers.set("Authorization", `Bearer ${c.env.OPENCLAW_GATEWAY_TOKEN}`);
+    }
+    const tokenUrl = new URL(url.toString());
+    if (!tokenUrl.searchParams.has("token")) {
+      tokenUrl.searchParams.set("token", c.env.OPENCLAW_GATEWAY_TOKEN);
+    }
+    httpRequest = new Request(tokenUrl.toString(), {
+      method: request.method,
+      headers,
+      body: request.body,
+      redirect: request.redirect,
+    });
+  }
+
   console.log("[HTTP] Proxying:", url.pathname + url.search);
-  const httpResponse = await sandbox.containerFetch(request, GATEWAY_PORT);
+  const httpResponse = await sandbox.containerFetch(httpRequest, GATEWAY_PORT);
   console.log("[HTTP] Response status:", httpResponse.status);
 
   // Add debug header to verify worker handled the request

@@ -353,6 +353,18 @@ adminApi.post("/gateway/restart", async (c) => {
       await new Promise((r) => setTimeout(r, 2000));
     }
 
+    // Clean up after killed process:
+    // 1. Kill orphaned gateway child (bash wrapper dies but `openclaw gateway &` survives)
+    // 2. Remove stale lockfile (SIGKILL skips bash traps)
+    try {
+      const cleanup = await sandbox.startProcess(
+        'pkill -f "openclaw gateway" 2>/dev/null; rm -rf /tmp/start-openclaw.lock; sleep 1; true',
+      );
+      await waitForProcess(cleanup, 10000);
+    } catch {
+      // Non-fatal
+    }
+
     // Start a new gateway in the background
     const bootPromise = ensureGateway(sandbox, c.env).catch((err) => {
       console.error("Gateway restart failed:", err);
@@ -611,5 +623,147 @@ adminApi.delete("/auth/providers/:profileId", async (c) => {
 
 // Mount admin API routes under /admin
 api.route("/admin", adminApi);
+
+// =============================================================================
+// Agent API — programmatic access to OpenClaw agent turns
+// Protected by Cloudflare Access (service token or browser session)
+// =============================================================================
+
+// Longer timeout for agent turns — model calls can take 30-60s
+const AGENT_TIMEOUT_MS = 120000;
+
+// POST /api/v1/agent - Run an agent turn and return the response
+api.post("/v1/agent", async (c) => {
+  const sandbox = c.get("sandbox");
+
+  let body: {
+    message?: string;
+    session?: string;
+    agent?: string;
+    thinking?: string;
+    timeout?: number;
+  };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ success: false, error: "Invalid JSON body" }, 400);
+  }
+
+  const message = body.message;
+  if (!message || typeof message !== "string" || message.trim().length === 0) {
+    return c.json({ success: false, error: "message is required" }, 400);
+  }
+
+  try {
+    await ensureGateway(sandbox, c.env);
+
+    const token = c.env.OPENCLAW_GATEWAY_TOKEN;
+    const tokenArg = token ? ` --token ${token}` : "";
+
+    // Build the command safely — base64-encode the message to avoid shell injection
+    const msgB64 = toBase64(message.trim());
+    const sessionArg = body.session
+      ? ` --session-id "${body.session.replace(/[^a-zA-Z0-9:_.-]/g, "")}"`
+      : "";
+    const agentArg = body.agent ? ` --agent "${body.agent.replace(/[^a-zA-Z0-9_-]/g, "")}"` : "";
+    const thinkingArg = body.thinking
+      ? ` --thinking "${body.thinking.replace(/[^a-z]/g, "")}"`
+      : "";
+
+    const cmd = `echo "${msgB64}" | base64 -d | openclaw agent --url ws://localhost:18789${tokenArg}${sessionArg}${agentArg}${thinkingArg} --message "$(cat -)" --json`;
+
+    console.log("[AGENT API] Running agent turn, session:", body.session || "default");
+    const timeout = Math.min(body.timeout || AGENT_TIMEOUT_MS, AGENT_TIMEOUT_MS);
+    const proc = await sandbox.startProcess(cmd);
+    await waitForProcess(proc, timeout);
+
+    const logs = await proc.getLogs();
+    const stdout = logs.stdout || "";
+    const stderr = logs.stderr || "";
+
+    // Try to parse JSON from output
+    const jsonMatch = stdout.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const result = JSON.parse(jsonMatch[0]);
+        return c.json({ success: true, ...result });
+      } catch {
+        // Fall through to raw output
+      }
+    }
+
+    return c.json({
+      success: true,
+      raw: stdout,
+      stderr: stderr || undefined,
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("[AGENT API] Error:", errorMessage);
+    return c.json({ success: false, error: errorMessage }, 500);
+  }
+});
+
+// GET /api/v1/sessions - List agent sessions
+api.get("/v1/sessions", async (c) => {
+  const sandbox = c.get("sandbox");
+
+  try {
+    await ensureGateway(sandbox, c.env);
+
+    const token = c.env.OPENCLAW_GATEWAY_TOKEN;
+    const tokenArg = token ? ` --token ${token}` : "";
+    const proc = await sandbox.startProcess(
+      `openclaw sessions --url ws://localhost:18789${tokenArg} --json`,
+    );
+    await waitForProcess(proc, CLI_TIMEOUT_MS);
+
+    const logs = await proc.getLogs();
+    const stdout = logs.stdout || "";
+    const jsonMatch = stdout.match(/[[{][\s\S]*[\]}]/);
+    if (jsonMatch) {
+      try {
+        return c.json(JSON.parse(jsonMatch[0]));
+      } catch {
+        /* fall through */
+      }
+    }
+    return c.json({ sessions: [], raw: stdout });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return c.json({ error: errorMessage }, 500);
+  }
+});
+
+// GET /api/v1/health - Gateway health (richer than /api/status)
+api.get("/v1/health", async (c) => {
+  const sandbox = c.get("sandbox");
+
+  try {
+    await ensureGateway(sandbox, c.env);
+
+    const token = c.env.OPENCLAW_GATEWAY_TOKEN;
+    const tokenArg = token ? ` --token ${token}` : "";
+    const proc = await sandbox.startProcess(
+      `openclaw gateway call health --url ws://localhost:18789${tokenArg} --json`,
+    );
+    await waitForProcess(proc, CLI_TIMEOUT_MS);
+
+    const logs = await proc.getLogs();
+    const stdout = logs.stdout || "";
+    const jsonMatch = stdout.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        return c.json(JSON.parse(jsonMatch[0]));
+      } catch {
+        /* fall through */
+      }
+    }
+    return c.json({ raw: stdout });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return c.json({ error: errorMessage }, 500);
+  }
+});
 
 export { api };
